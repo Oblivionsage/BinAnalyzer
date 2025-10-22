@@ -1,4 +1,4 @@
-# BinAnalyzer
+f# BinAnalyzer
 
 <div align="center">
 
@@ -259,7 +259,7 @@ Open an issue with:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 ```
-MIT License - Copyright (c) 2025 nullprophet
+MIT License - Copyright (c) 2025 Oblivionsage
 ```
 
 ---
