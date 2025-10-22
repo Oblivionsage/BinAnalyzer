@@ -17,7 +17,8 @@
 
 ## Screenshot
 
-<img width="805" alt="BinAnalyzer in action" src="https://github.com/user-attachments/assets/197eb350-53b7-4687-853e-fc6d53a0fb31" />
+<img width="575" height="508" alt="image" src="https://github.com/user-attachments/assets/14749cd0-44f4-4a66-931a-93b925d605a2" />
+
 
 ---
 
