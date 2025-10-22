@@ -4,30 +4,54 @@
 #include "hex_viewer.hpp"
 #include "hash_calculator.hpp"
 #include "pe_parser.hpp"
-
-void printUsage(const char* programName) {
-    std::cout << "Usage: " << programName << " <binary_file>\n";
-    std::cout << "\nBinAnalyzer - Modern Binary Analysis Tool\n";
-    std::cout << "Analyze binary files with hex view, hash calculation, and PE parsing\n";
-}
+#include "cli_parser.hpp"
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        printUsage(argv[0]);
-        return 1;
-    }
-
-    std::string filename = argv[1];
+    // Parse command-line arguments first
+    CliOptions options = CliParser::parse(argc, argv);
     
+    if (options.showHelp) {
+        HexViewer::displayBanner();
+        CliParser::printHelp(argv[0]);
+        return 0;
+    }
+    
+    if (options.showVersion) {
+        HexViewer::displayBanner();
+        CliParser::printVersion();
+        return 0;
+    }
+    
+    // Display banner for normal operations
+    HexViewer::displayBanner();
+
     // Open file
-    FileHandler fileHandler(filename);
+    FileHandler fileHandler(options.filename);
     if (!fileHandler.open()) {
-        std::cerr << "Error: Could not open file '" << filename << "'\n";
+        std::cerr << "\n\033[91m[!] Error:\033[0m Could not open file '" << options.filename << "'\n\n";
         return 1;
     }
 
     // Read file data
     std::vector<uint8_t> data = fileHandler.readAll();
+    
+    // Strings-only mode
+    if (options.stringsOnly) {
+        PEParser peParser;
+        std::vector<std::string> strings = peParser.extractStrings(data, options.minStringLength);
+        
+        std::cout << "\n\033[1;96m[*] File:\033[0m " << options.filename << "\n";
+        std::cout << "\033[1;96m[*] Extracted Strings\033[0m (min length " << options.minStringLength << "):\n";
+        std::cout << "\033[90m────────────────────────────────────────────────────────\033[0m\n";
+        
+        for (const auto& str : strings) {
+            std::cout << "  " << str << "\n";
+        }
+        
+        std::cout << "\n\033[92m[+] Total: " << strings.size() << " strings found\033[0m\n\n";
+        fileHandler.close();
+        return 0;
+    }
     
     // Parse PE if applicable
     PEParser peParser;
@@ -41,15 +65,16 @@ int main(int argc, char* argv[]) {
     }
     
     // Calculate hashes
-    std::cout << "\n[*] Calculating file hashes...\n";
+    std::cout << "\033[96m[*] Calculating file hashes...\033[0m\n";
     std::string md5 = HashCalculator::calculateMD5(data);
     std::string sha256 = HashCalculator::calculateSHA256(data);
     
     // Display results
     HexViewer viewer;
-    viewer.displayHeader(filename, fileHandler.getSize(), fileType);
+    viewer.setColorEnabled(!options.noColor);
+    viewer.displayHeader(options.filename, fileHandler.getSize(), fileType);
     viewer.displayFileInfo(md5, sha256);
-    
+    viewer.displayStatistics(data);
     // Display PE info if available
     if (peInfo.isPE) {
         std::cout << "║                                                                                       ║\n";
@@ -63,15 +88,15 @@ int main(int argc, char* argv[]) {
         std::cout << "╠═══════════════════════════════════════════════════════════════════════════════════════╣\n";
     }
     
-    // Display hex view (first 256 bytes)
-    viewer.displayHex(data, 0, 256);
+    // Display hex view with custom offset and length
+    viewer.displayHex(data, options.offset, options.length);
     
     // Extract and display strings
-    std::vector<std::string> strings = peParser.extractStrings(data, 5);
+    std::vector<std::string> strings = peParser.extractStrings(data, options.minStringLength);
     
     if (!strings.empty()) {
-        std::cout << "\n[*] Extracted Strings (min length 5, showing first 20):\n";
-        std::cout << "────────────────────────────────────────────────────────\n";
+        std::cout << "\n\033[96m[*] Extracted Strings\033[0m (min length " << options.minStringLength << ", showing first 20):\n";
+        std::cout << "\033[90m────────────────────────────────────────────────────────\033[0m\n";
         
         size_t count = 0;
         for (const auto& str : strings) {
@@ -81,11 +106,11 @@ int main(int argc, char* argv[]) {
         }
         
         if (strings.size() > 20) {
-            std::cout << "  ... and " << (strings.size() - 20) << " more strings\n";
+            std::cout << "  \033[90m... and " << (strings.size() - 20) << " more strings\033[0m\n";
         }
     }
     
-    std::cout << "\n[+] Analysis complete!\n\n";
+    std::cout << "\n\033[92m[+] Analysis complete!\033[0m\n\n";
     
     fileHandler.close();
     return 0;

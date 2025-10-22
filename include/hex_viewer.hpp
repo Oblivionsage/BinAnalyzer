@@ -9,10 +9,11 @@ class HexViewer {
 public:
     HexViewer();
     
+    static void displayBanner();
     void displayHex(const std::vector<uint8_t>& data, size_t offset = 0, size_t maxBytes = 256);
     void displayHeader(const std::string& filename, size_t fileSize, const std::string& fileType);
     void displayFileInfo(const std::string& md5, const std::string& sha256);
-    
+    void displayStatistics(const std::vector<uint8_t>& data);
     void setColorEnabled(bool enabled);
 
 private:

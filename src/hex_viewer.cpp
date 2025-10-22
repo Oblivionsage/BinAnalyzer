@@ -1,9 +1,27 @@
+#include <cmath>
 #include "hex_viewer.hpp"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
 HexViewer::HexViewer() : colorEnabled_(true) {
+}
+
+void HexViewer::displayBanner() {
+    std::cout << COLOR_CYAN << COLOR_BOLD;
+    std::cout << R"(
+    ____  _          ___                __                     
+   / __ )(_)___     /   |  ____  ____ _/ /_  ______  ___  _____
+  / __  / / __ \   / /| | / __ \/ __ `/ / / / /_  / / _ \/ ___/
+ / /_/ / / / / /  / ___ |/ / / / /_/ / / /_/ / / /_/  __/ /    
+/_____/_/_/ /_/  /_/  |_/_/ /_/\__,_/_/\__, / /___/\___/_/     
+                                       /____/                   
+)" << COLOR_RESET;
+    std::cout << COLOR_GREEN << "                    Modern Binary Analysis Tool" << COLOR_RESET << "\n";
+    std::cout << COLOR_YELLOW << "                         Version 1.0 | " << COLOR_RESET;
+    std::cout << COLOR_WHITE << "by oblivionsage\n" << COLOR_RESET;
+    std::cout << COLOR_GRAY << "                    github.com/Oblivionsage/BinAnalyzer\n" << COLOR_RESET;
+    std::cout << "\n";
 }
 
 void HexViewer::setColorEnabled(bool enabled) {
@@ -131,4 +149,64 @@ std::string HexViewer::getAsciiChar(uint8_t byte) const {
         return std::string(1, static_cast<char>(byte));
     }
     return COLOR_GRAY + std::string(".") + COLOR_RESET;
+}
+void HexViewer::displayStatistics(const std::vector<uint8_t>& data) {
+    if (data.empty()) return;
+    
+    size_t nullBytes = 0;
+    size_t printableBytes = 0;
+    size_t controlBytes = 0;
+    size_t extendedBytes = 0;
+    
+    // Count byte types
+    for (uint8_t byte : data) {
+        if (byte == 0x00) {
+            nullBytes++;
+        } else if (byte >= 0x20 && byte <= 0x7E) {
+            printableBytes++;
+        } else if (byte >= 0x01 && byte <= 0x1F) {
+            controlBytes++;
+        } else {
+            extendedBytes++;
+        }
+    }
+    
+    // Calculate percentages
+    double nullPercent = (nullBytes * 100.0) / data.size();
+    double printablePercent = (printableBytes * 100.0) / data.size();
+    double controlPercent = (controlBytes * 100.0) / data.size();
+    double extendedPercent = (extendedBytes * 100.0) / data.size();
+    
+    // Simple entropy calculation
+    int byteCounts[256] = {0};
+    for (uint8_t byte : data) {
+        byteCounts[byte]++;
+    }
+    
+    double entropy = 0.0;
+    for (int i = 0; i < 256; i++) {
+        if (byteCounts[i] > 0) {
+            double p = static_cast<double>(byteCounts[i]) / data.size();
+            entropy -= p * log2(p);
+        }
+    }
+    
+    std::cout << "║ " << COLOR_BOLD << "Statistics:" << COLOR_RESET << "                                                                         ║\n";
+    std::cout << "║  NULL bytes:       " << std::fixed << std::setprecision(2) << std::setw(6) << nullPercent << "%";
+    std::cout << "     Printable ASCII: " << std::setw(6) << printablePercent << "%                         ║\n";
+    std::cout << "║  Control chars:    " << std::setw(6) << controlPercent << "%";
+    std::cout << "     Extended ASCII:  " << std::setw(6) << extendedPercent << "%                         ║\n";
+    std::cout << "║  Entropy:          " << COLOR_YELLOW << std::setw(6) << entropy << COLOR_RESET << " / 8.00";
+    
+    // Entropy assessment
+    if (entropy > 7.5) {
+        std::cout << "  (" << COLOR_RED << "High - Likely packed/encrypted" << COLOR_RESET << ")";
+    } else if (entropy > 6.5) {
+        std::cout << "  (" << COLOR_YELLOW << "Medium - Possibly compressed" << COLOR_RESET << ")";
+    } else {
+        std::cout << "  (" << COLOR_GREEN << "Low - Normal executable" << COLOR_RESET << ")     ";
+    }
+    std::cout << "       ║\n";
+    
+    std::cout << "╠═══════════════════════════════════════════════════════════════════════════════════════╣\n";
 }

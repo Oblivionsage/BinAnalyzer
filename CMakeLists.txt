@@ -17,6 +17,7 @@ set(SOURCES
     src/hex_viewer.cpp
     src/hash_calculator.cpp
     src/pe_parser.cpp
+    src/cli_parser.cpp
 )
 
 # Include directories
