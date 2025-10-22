@@ -86,11 +86,44 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
 
 ### Phase 2 (Planned)
 
+
+#### Import Table Analysis
+
+- **100+ Suspicious APIs catalogued** across 12 categories
+- **Threat level scoring:** INFO → LOW → MEDIUM → HIGH → CRITICAL
+- **Intelligent categorization:**
+  -  Process Injection (CreateRemoteThread, WriteProcessMemory, etc.)
+  -  Memory Manipulation (VirtualAlloc, VirtualProtect, etc.)
+  -  Anti-Debug (IsDebuggerPresent, CheckRemoteDebuggerPresent, etc.)
+  -  Anti-VM Detection
+  -  Network Operations (WinInet, WinSock)
+  -  File Operations
+  -  Registry Operations
+  -  Cryptography APIs
+  -  Process Manipulation
+  -  Privilege Escalation
+  -  Evasion Techniques
+  -  Information Gathering
+
+#### Performance & Safety
+- Platform-aware analysis (PE-only to avoid false positives)
+- Optimized scanning (first 2MB for large files)
+- Progress indicators for slow operations
+- Duplicate detection and limiting (max 50 displayed)
+
+#### Red Team CLI Mode
+```bash
+./binanalyzer --red-team suspicious.exe
+./binanalyzer -r malware.dll
+```
+### Phase 2 (Partial - Import Analysis Complete)
+
 - ELF header parser (Linux binaries)
 - Import/Export table analysis
 - Section/Segment detailed analysis
 - Entropy calculation (detect packed/encrypted sections)
 - Interactive navigation mode
+
 
 ### Phase 3 (Future)
 
