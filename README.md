@@ -15,6 +15,12 @@
 
 ---
 
+## Screenshot
+
+<img width="805" alt="BinAnalyzer in action" src="https://github.com/user-attachments/assets/197eb350-53b7-4687-853e-fc6d53a0fb31" />
+
+---
+
 ## Overview
 
 BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern C++17. It provides an intuitive, colorized terminal interface for analyzing executable files, extracting information, and performing initial reconnaissance on unknown binaries.
@@ -31,7 +37,7 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
 
 ## Features
 
-### Phase 1 (Current - v1.0) 
+### Phase 1 (Current - v1.0)
 
 #### Colorized Hex Viewer
 - Intelligent byte highlighting based on content type
@@ -62,7 +68,7 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
 - Filters printable ASCII strings
 - Shows first 20 strings with count of remaining
 
-### Phase 2 (Planned) 
+### Phase 2 (Planned)
 
 - ELF header parser (Linux binaries)
 - Import/Export table analysis
@@ -70,7 +76,7 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
 - Entropy calculation (detect packed/encrypted sections)
 - Interactive navigation mode
 
-### Phase 3 (Future) 
+### Phase 3 (Future)
 
 - Pattern matching (YARA-like rules)
 - Disassembly support (Capstone integration)
@@ -276,8 +282,8 @@ MIT License - Copyright (c) 2025 nullprophet
 
 <div align="center">
 
-**If you find this tool useful, please consider giving it a ⭐️**
+**If you find this tool useful, please consider giving it a star**
 
-Made with ❤️ for the reverse engineering community
+Made for the reverse engineering community
 
 </div>
