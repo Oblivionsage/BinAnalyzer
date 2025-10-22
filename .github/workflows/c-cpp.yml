@@ -1,0 +1,85 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        # windows-latest - TODO: Fix OpenSSL path
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libssl-dev
+    
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake openssl
+    
+    - name: Setup MSVC (Windows)
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1
+    
+    - name: Install OpenSSL (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install openssl -y
+        
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL-Win64"
+    
+    - name: Configure CMake (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+    
+    - name: Test (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        cd build
+        ./binanalyzer --version
+        ./binanalyzer --help
+    
+    - name: Test (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd build/Release
+        ./binanalyzer.exe --version
+        ./binanalyzer.exe --help
+    
+    - name: Upload artifact (Linux/macOS)
+      if: runner.os != 'Windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: binanalyzer-${{ matrix.os }}
+        path: build/binanalyzer
+    
+    - name: Upload artifact (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: binanalyzer-${{ matrix.os }}
+        path: build/Release/binanalyzer.exe

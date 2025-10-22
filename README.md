@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![C++17](https://img.shields.io/badge/C++-17-00599C?style=for-the-badge&logo=c%2B%2B)](https://en.cppreference.com/w/cpp/17)
 [![CMake](https://img.shields.io/badge/CMake-3.15+-064F8C?style=for-the-badge&logo=cmake)](https://cmake.org/)
+![Build Status](https://github.com/Oblivionsage/BinAnalyzer/actions/workflows/c-cpp.yml/badge.svg)
 
 **A modern, terminal-based binary analysis tool for reverse engineers and security researchers**
 
@@ -17,7 +18,9 @@
 
 ## Screenshot
 
-<img width="575" height="508" alt="image" src="https://github.com/user-attachments/assets/14749cd0-44f4-4a66-931a-93b925d605a2" />
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/a41103ae-c509-48fe-a136-9957036c0fe0" alt="BinAnalyzer Demo" width="900"/>
+</div>
 
 
 ---
