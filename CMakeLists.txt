@@ -19,6 +19,7 @@ set(SOURCES
     src/pe_parser.cpp
     src/cli_parser.cpp
     src/import_analyzer.cpp
+    src/security_analyzer.cpp
 )
 
 # Include directories

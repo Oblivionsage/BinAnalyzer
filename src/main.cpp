@@ -6,6 +6,7 @@
 #include "pe_parser.hpp"
 #include "cli_parser.hpp"
 #include "import_analyzer.hpp"
+#include "security_analyzer.hpp"
 
 int main(int argc, char* argv[]) {
     // Parse command-line arguments first
@@ -93,12 +94,13 @@ int main(int argc, char* argv[]) {
     // Display hex view with custom offset and length
     viewer.displayHex(data, options.offset, options.length);
     
-    // Import Table Analysis (Red Team Mode)
+    // Red Team Analysis Mode
     if (options.redTeamMode) {
         std::cout << "\033[93m[!] Note: Red Team analysis currently supports PE files only\033[0m\n";
         std::cout << "\033[93m[!] String-based detection may produce false positives\033[0m\n";
         std::cout << "\033[93m[!] Future: Full import table parsing for accurate results\033[0m\n\n";
         
+        // Import Table Analysis
         ImportAnalyzer importAnalyzer;
         ImportAnalysisResult importResult = importAnalyzer.analyze(data);
         
@@ -107,8 +109,13 @@ int main(int argc, char* argv[]) {
         } else {
             std::cout << "\033[92m[+] No suspicious imports detected\033[0m\n\n";
         }
+        
+        // Security Analysis
+        SecurityAnalyzer securityAnalyzer;
+        SecurityAnalysisResult securityResult = securityAnalyzer.analyze(data);
+        securityAnalyzer.displayResults(securityResult);
     }
-
+    
     // Extract and display strings
     std::vector<std::string> strings = peParser.extractStrings(data, options.minStringLength);
     
