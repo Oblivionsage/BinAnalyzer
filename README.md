@@ -1,4 +1,4 @@
-f# BinAnalyzer
+# BinAnalyzer
 
 <div align="center">
 
