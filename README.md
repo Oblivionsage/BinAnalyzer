@@ -1,5 +1,8 @@
 ##  BinAnalyzer
 
+<img width="805" height="882" alt="image" src="https://github.com/user-attachments/assets/197eb350-53b7-4687-853e-fc6d53a0fb31" />
+
+
 A modern terminal-based binary analysis tool written in C++.
 
 ## Features
