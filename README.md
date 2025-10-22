@@ -37,7 +37,7 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
 
 ## Features
 
-### Phase 1 (Current - v1.0)
+### Phase 1 (Complete - v1.0) 
 
 #### Colorized Hex Viewer
 - Intelligent byte highlighting based on content type
@@ -47,13 +47,15 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
   - **Blue**: Extended ASCII
   - **Gray**: NULL bytes
 - Professional box-drawing interface
-- Configurable display length
+- Configurable display offset and length
 
-#### File Information
+#### File Information & Analysis
 - MD5 hash calculation
 - SHA256 hash calculation
 - File size with human-readable format
 - Automatic file type detection (PE/ELF)
+- **Byte statistics** with percentage breakdown
+- **Entropy calculation** for packed/encrypted binary detection
 
 #### PE Header Parser
 - Architecture detection (x86/x64)
@@ -67,6 +69,16 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
 - Configurable minimum string length
 - Filters printable ASCII strings
 - Shows first 20 strings with count of remaining
+- Strings-only mode for quick extraction
+
+#### Command-Line Interface
+- `--help` / `-h` - Display help message
+- `--version` / `-v` - Show version information
+- `--offset` / `-o` - Start hex dump at specific offset
+- `--length` / `-l` - Control number of bytes to display
+- `--min-string` / `-m` - Set minimum string length
+- `--no-color` - Disable colored output (useful for piping)
+- `--strings-only` - Extract and display only strings
 
 ### Phase 2 (Planned)
 
@@ -129,42 +141,32 @@ sudo make install
 
 ---
 
-## Usage
-
-### Basic Usage
-```bash
-./binanalyzer <binary_file>
-```
-
 ### Examples
 
-#### Analyze an executable
+#### Basic analysis
 ```bash
 ./binanalyzer /bin/ls
 ```
 
-#### Analyze a Windows PE file
+#### Analyze from specific offset
 ```bash
-./binanalyzer malware_sample.exe
+./binanalyzer --offset 0x1000 --length 512 malware.exe
 ```
 
-#### Analyze the tool itself
+#### Extract strings with minimum length
 ```bash
-./binanalyzer ./binanalyzer
+./binanalyzer --strings-only --min-string 10 binary.dll
 ```
 
-### Sample Output
+#### Disable colors for text output
+```bash
+./binanalyzer --no-color sample.bin > analysis.txt
 ```
-╔════════════════════════════════════ BinAnalyzer v1.0 ════════════════════════════════════╗
-║ File: sample.exe                                     Size: 45,312 bytes (44 KB)          ║
-║ MD5:    5d41402abc4b2a76b9719d911017c592                                                  ║
-║ SHA256: a98f403a50e46591c5fbc238e778b8093cd6a81ad81b7cb11b6ec6c6b54dcf09                ║
-╠═══════════════════════════════════════════════════════════════════════════════════════════╣
-║                                                                                           ║
-║  Offset(h) │ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F │ Decoded ASCII             ║
-║ ───────────┼─────────────────────────────────────────────────┼───────────────────────── ║
-║  00000000  │ 4D 5A 90 00 03 00 00 00 04 00 00 00 FF FF 00 00 │ MZ..................      ║
-║  00000010  │ B8 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00 │ ........@.......          ║
+
+#### Get help and version
+```bash
+./binanalyzer --help
+./binanalyzer --version
 ```
 
 ---
