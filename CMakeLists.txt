@@ -20,6 +20,7 @@ set(SOURCES
     src/cli_parser.cpp
     src/import_analyzer.cpp
     src/security_analyzer.cpp
+    src/advanced_analyzer.cpp
 )
 
 # Include directories
