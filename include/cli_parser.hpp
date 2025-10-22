@@ -12,6 +12,7 @@ struct CliOptions {
     bool stringsOnly = false;
     bool showHelp = false;
     bool showVersion = false;
+    bool redTeamMode = false;
     size_t minStringLength = 5;
 };
 

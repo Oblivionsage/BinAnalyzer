@@ -23,6 +23,9 @@ CliOptions CliParser::parse(int argc, char* argv[]) {
         else if (arg == "--strings-only") {
             options.stringsOnly = true;
         }
+        else if (arg == "--red-team" || arg == "-r") {
+            options.redTeamMode = true;
+        }
         else if (arg == "--offset" || arg == "-o") {
             if (i + 1 < argc) {
                 options.offset = std::strtoul(argv[++i], nullptr, 0);
@@ -79,18 +82,20 @@ void CliParser::printHelp(const char* programName) {
     std::cout << "  \033[96m-m, --min-string <num>\033[0m  Minimum string length (default: 5)\n";
     std::cout << "  \033[96m--no-color\033[0m              Disable colored output\n";
     std::cout << "  \033[96m--strings-only\033[0m          Only extract and display strings\n";
+    std::cout << "  \033[96m-r, --red-team\033[0m          Enable Red Team analysis mode\n";
     
     std::cout << "\n\033[1mEXAMPLES:\033[0m\n";
     std::cout << "  " << programName << " /bin/ls\n";
     std::cout << "  " << programName << " --offset 0x1000 --length 512 malware.exe\n";
     std::cout << "  " << programName << " --strings-only --min-string 10 binary.dll\n";
+    std::cout << "  " << programName << " --red-team suspicious.exe\n";
     std::cout << "  " << programName << " --no-color sample.bin > output.txt\n\n";
 }
 
 void CliParser::printVersion() {
     std::cout << "\n\033[1;96mBinAnalyzer\033[0m version \033[1;93m1.0\033[0m\n";
     std::cout << "Modern Binary Analysis Tool\n";
-    std::cout << "Copyright (c) 2025 oblivionsage\n";
+    std::cout << "Copyright (c) 2025 Oblivionsage\n";
     std::cout << "License: MIT\n";
     std::cout << "GitHub: https://github.com/Oblivionsage/BinAnalyzer\n\n";
 }

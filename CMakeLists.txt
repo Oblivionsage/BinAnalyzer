@@ -18,6 +18,7 @@ set(SOURCES
     src/hash_calculator.cpp
     src/pe_parser.cpp
     src/cli_parser.cpp
+    src/import_analyzer.cpp
 )
 
 # Include directories
