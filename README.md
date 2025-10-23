@@ -14,14 +14,6 @@
 
 </div>
 
----
-
-## Screenshot
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/a41103ae-c509-48fe-a136-9957036c0fe0" alt="BinAnalyzer Demo" width="900"/>
-</div>
-
 
 ---
 
@@ -261,6 +253,32 @@ BinAnalyzer/
 See [Issues](https://github.com/Oblivionsage/BinAnalyzer/issues) for detailed feature requests and bug reports.
 
 ---
+
+## ⚠️ LEGAL DISCLAIMER
+
+**This tool is for authorized security research and educational purposes only.**
+
+### Authorized Use
+
+- Legitimate malware analysis
+- Security research with proper authorization
+- Educational and academic purposes
+- Legal penetration testing
+- Defensive security operations
+
+### User Responsibility
+
+By using this tool, you agree to:
+- Obtain proper authorization before analyzing any binary
+- Comply with all applicable laws and regulations
+- Use this tool ethically and responsibly
+- Accept full responsibility for your actions
+
+### Developer Disclaimer
+
+The developers are NOT responsible for misuse of this tool. No warranty is provided. Users assume all liability for their actions.
+
+**Misuse may result in severe legal consequences including criminal prosecution.**
 
 ## Contributing
 
