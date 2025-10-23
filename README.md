@@ -12,8 +12,9 @@ Cross-platform | Fast | Modular | Open Source
 
 ## Features
 
-- **x86/x64 Disassembly** - Capstone-powered instruction disassembly with auto-detection
-- PE/ELF file analysis with entry point detection
+- **Multi-Architecture Disassembly** - x86/x64, ARM/ARM64, ARM Thumb with Capstone
+- **Auto-Detection** - Automatic architecture and entry point detection (PE/ELF/Mach-O)
+- PE/ELF/Mach-O file analysis with entry point detection
 - Import table analysis with threat categorization
 - Security feature detection (ASLR, DEP, CFG, SafeSEH)
 - Packer detection (UPX, Themida, VMProtect, ASPack, etc.)
@@ -48,6 +49,10 @@ make
 # Detailed disassembly from entry point
 ./binanalyzer --disasm <file>
 
+# Disassemble with specific architecture
+./binanalyzer --disasm --arch arm64 firmware.bin
+./binanalyzer --disasm --arch thumb binary.elf
+
 # Disassemble 100 instructions from specific offset
 ./binanalyzer --disasm 100 --offset 0x1000 <file>
 
@@ -59,6 +64,22 @@ make
 
 # Hex dump with custom offset/length
 ./binanalyzer --offset 0x1000 --length 512 <file>
+
+# Test x86-64 (Linux)
+./binanalyzer --disasm /bin/ls
+
+# Test PE (Windows)
+./binanalyzer --disasm putty.exe
+
+# Test ARM
+wget https://github.com/therealsaumil/static-arm-bins/raw/master/id-armel-static -O test-arm
+./binanalyzer --disasm test-arm
+
+# Test Thumb mode
+./binanalyzer --disasm --arch thumb --offset 0x8880 binary.elf
+
+# Test ARM64
+./binanalyzer --disasm --arch arm64 ios-binary
 ```
 
 ## Output
@@ -66,11 +87,11 @@ make
 Minimal terminal output with colored hex addresses, instruction highlighting, and threat indicators.
 
 **Disassembly color scheme:**
--  Red: Function calls (`call`)
--  Yellow: Jumps (`je`, `jne`, `jmp`)
--  Blue: SIMD operations (`xmm`, `ymm`)
--  Purple: System calls (`syscall`, `int`)
--  Gray: Standard instructions
+- Red: Function calls (`call`, `bl`, `blx`)
+- Yellow: Jumps (`je`, `jne`, `jmp`, `b`)
+- Blue: SIMD operations (`xmm`, `ymm`, NEON)
+- Magenta: System calls (`syscall`, `int`, `svc`)
+- Gray: Standard instructions
 
 ## Architecture
 ```
@@ -78,7 +99,7 @@ src/
 ├── main.cpp                  # Entry point
 ├── file_handler.cpp          # File I/O operations
 ├── pe_parser.cpp             # PE format parsing
-├── disassembler.cpp          # x86/x64 disassembly engine
+├── disassembler.cpp          # Multi-arch disassembly engine
 ├── import_analyzer.cpp       # Import table analysis
 ├── security_analyzer.cpp     # Security features detection
 ├── packer_detector.cpp       # Packer identification
@@ -88,14 +109,15 @@ src/
 └── advanced_analyzer.cpp     # Analysis orchestrator
 ```
 
+
 ## Roadmap
 
 ### Phase 1: Advanced Binary Analysis
 - [x] **Disassembly Engine Integration**
   - [x] x86/x64 instruction disassembly
-  - [x] Auto-detect entry point (PE/ELF)
+  - [x] Auto-detect entry point (PE/ELF/Mach-O)
   - [x] Architecture detection (32/64-bit)
-  - [ ] ARM/ARM64 support
+  - [x] ARM/ARM64/Thumb support
   - [ ] Control flow graph generation
   - [ ] Basic block identification
   - [ ] Function boundary detection
@@ -365,24 +387,8 @@ MIT License
 
 ## Disclaimer
 
-For authorized security research and penetration testing only. Users are responsible for compliance with applicable laws
+For authorized security research and penetration testing only. Users are responsible for compliance with applicable laws.
 
 ## Author
 
 Oblivionsage
-
-## Testing
-```bash
-# Test x86-64 (Linux)
-./binanalyzer --disasm /bin/ls
-
-# Test PE (Windows)
-./binanalyzer --disasm putty.exe
-
-# Test ARM
-wget https://github.com/therealsaumil/static-arm-bins/raw/master/id-armel-static -O test-arm
-./binanalyzer --disasm test-arm
-
-# Test Thumb mode
-./binanalyzer --disasm --arch thumb --offset 0x8880 binary.elf
-```
