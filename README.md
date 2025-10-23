@@ -5,7 +5,7 @@
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 ![Build](https://github.com/Oblivionsage/BinAnalyzer/actions/workflows/c-cpp.yml/badge.svg)
 
-**Modern binary analysis tool for offensive security research and malware analysis.**
+**Modern binary analysis tool for offensive security research and malware analysis**
 ```
 Cross-platform | Fast | Modular | Open Source
 ```
@@ -16,13 +16,13 @@ Cross-platform | Fast | Modular | Open Source
 
 **For authorized security research and educational purposes only.**
 
-By using this tool, you agree to obtain proper authorization, comply with all laws, and accept full responsibility for your actions. Developers are not liable for misuse. Unauthorized use may result in criminal prosecution.
+By using this tool, you agree to obtain proper authorization, comply with all laws, and accept full responsibility for your actions. Developers are not liable for misuse. Unauthorized use may result in criminal prosecution
 
 ---
 
 ## Overview
 
-BinAnalyzer is a comprehensive binary analysis framework built in modern C++17. It combines static analysis, threat intelligence extraction, and offensive security research capabilities in a single, efficient tool.
+BinAnalyzer is a comprehensive binary analysis framework built in modern C++17. It combines static analysis, threat intelligence extraction, and offensive security research capabilities in a single, efficient tool
 
 **Key Capabilities:**
 
