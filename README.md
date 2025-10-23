@@ -84,6 +84,7 @@ BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern
 - **100+ Suspicious APIs catalogued** across 12 categories
 - **Threat level scoring:** INFO → LOW → MEDIUM → HIGH → CRITICAL
 - **Intelligent categorization:**
+  
   -  Process Injection (CreateRemoteThread, WriteProcessMemory, etc.)
   -  Memory Manipulation (VirtualAlloc, VirtualProtect, etc.)
   -  Anti-Debug (IsDebuggerPresent, CheckRemoteDebuggerPresent, etc.)
