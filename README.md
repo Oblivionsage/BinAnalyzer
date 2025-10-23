@@ -370,3 +370,19 @@ For authorized security research and penetration testing only. Users are respons
 ## Author
 
 Oblivionsage
+
+## Testing
+```bash
+# Test x86-64 (Linux)
+./binanalyzer --disasm /bin/ls
+
+# Test PE (Windows)
+./binanalyzer --disasm putty.exe
+
+# Test ARM
+wget https://github.com/therealsaumil/static-arm-bins/raw/master/id-armel-static -O test-arm
+./binanalyzer --disasm test-arm
+
+# Test Thumb mode
+./binanalyzer --disasm --arch thumb --offset 0x8880 binary.elf
+```
