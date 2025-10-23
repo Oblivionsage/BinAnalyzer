@@ -6,14 +6,14 @@
 ![Build](https://github.com/Oblivionsage/BinAnalyzer/actions/workflows/c-cpp.yml/badge.svg)
 
 Binary analysis toolkit for offensive security research
-
 ```
 Cross-platform | Fast | Modular | Open Source
 ```
 
 ## Features
 
-- PE/ELF file analysis
+- **x86/x64 Disassembly** - Capstone-powered instruction disassembly with auto-detection
+- PE/ELF file analysis with entry point detection
 - Import table analysis with threat categorization
 - Security feature detection (ASLR, DEP, CFG, SafeSEH)
 - Packer detection (UPX, Themida, VMProtect, ASPack, etc.)
@@ -25,7 +25,6 @@ Cross-platform | Fast | Modular | Open Source
 - Hex dump with colored output
 
 ## Installation
-
 ```bash
 git clone https://github.com/nullprophet/BinAnalyzer.git
 cd BinAnalyzer
@@ -39,25 +38,39 @@ make
 - C++17 compiler
 - CMake 3.15+
 - OpenSSL development libraries
+- Capstone disassembly library
 
 ## Usage
 ```bash
+# Standard analysis with quick disassembly preview
+./binanalyzer <file>
+
+# Detailed disassembly from entry point
+./binanalyzer --disasm <file>
+
+# Disassemble 100 instructions from specific offset
+./binanalyzer --disasm 100 --offset 0x1000 <file>
+
 # Red team analysis mode
 ./binanalyzer --red-team <file>
 
-# Standard analysis
-./binanalyzer <file>
-
 # Extract strings only
-./binanalyzer --strings <file>
+./binanalyzer --strings-only <file>
 
 # Hex dump with custom offset/length
-./binanalyzer <file> --offset 0x1000 --length 512
+./binanalyzer --offset 0x1000 --length 512 <file>
 ```
 
 ## Output
 
-Minimal terminal output with colored hex addresses and threat indicators.
+Minimal terminal output with colored hex addresses, instruction highlighting, and threat indicators.
+
+**Disassembly color scheme:**
+-  Red: Function calls (`call`)
+-  Yellow: Jumps (`je`, `jne`, `jmp`)
+-  Blue: SIMD operations (`xmm`, `ymm`)
+-  Purple: System calls (`syscall`, `int`)
+-  Gray: Standard instructions
 
 ## Architecture
 ```
@@ -65,6 +78,7 @@ src/
 ├── main.cpp                  # Entry point
 ├── file_handler.cpp          # File I/O operations
 ├── pe_parser.cpp             # PE format parsing
+├── disassembler.cpp          # x86/x64 disassembly engine
 ├── import_analyzer.cpp       # Import table analysis
 ├── security_analyzer.cpp     # Security features detection
 ├── packer_detector.cpp       # Packer identification
@@ -77,13 +91,15 @@ src/
 ## Roadmap
 
 ### Phase 1: Advanced Binary Analysis
-- [ ] **Disassembly Engine Integration**
-  - x86/x64 instruction disassembly
-  - ARM/ARM64 support
-  - Control flow graph generation
-  - Basic block identification
-  - Function boundary detection
-  - Cross-reference analysis
+- [x] **Disassembly Engine Integration**
+  - [x] x86/x64 instruction disassembly
+  - [x] Auto-detect entry point (PE/ELF)
+  - [x] Architecture detection (32/64-bit)
+  - [ ] ARM/ARM64 support
+  - [ ] Control flow graph generation
+  - [ ] Basic block identification
+  - [ ] Function boundary detection
+  - [ ] Cross-reference analysis
 
 - [ ] **Advanced Packer Detection**
   - Custom packer signatures database
@@ -349,7 +365,7 @@ MIT License
 
 ## Disclaimer
 
-For authorized security research and penetration testing only. Users are responsible for compliance with applicable laws.
+For authorized security research and penetration testing only. Users are responsible for compliance with applicable laws
 
 ## Author
 
