@@ -89,12 +89,12 @@ struct ShellcodeAnalysisResult {
 // NETWORK IOC EXTRACTION
 // ============================================================================
 
-enum class IOCType {
-    IPV4,
-    IPV6,
-    URL,
-    DOMAIN,
-    EMAIL,
+enum class IOCType { // i just changed because building fails at macOS
+    IPV4_ADDRESS,
+    IPV6_ADDRESS,
+    URL_ADDRESS,
+    DOMAIN_NAME,
+    EMAIL_ADDRESS,
     BITCOIN_ADDRESS
 };
 

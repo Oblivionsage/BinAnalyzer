@@ -445,44 +445,44 @@ IOCExtractionResult AdvancedAnalyzer::extractIOCs(const std::vector<uint8_t>& da
             if (currentString.length() >= 7) {
                 if (isValidIPv4(currentString)) {
                     NetworkIOC ioc;
-                    ioc.type = IOCType::IPV4;
+                    ioc.type = IOCType::IPV4_ADDRESS;  // DEĞİŞTİ
                     ioc.value = currentString;
                     ioc.offset = stringStart;
                     ioc.context = extractContext(data, stringStart, currentString.length());
                     result.iocs.push_back(ioc);
-                    result.counts[IOCType::IPV4]++;
+                    result.counts[IOCType::IPV4_ADDRESS]++;  // DEĞİŞTİ
                     result.networkActivitySuspected = true;
                 }
                 else if (isValidDomain(currentString)) {
                     NetworkIOC ioc;
-                    ioc.type = IOCType::DOMAIN;
+                    ioc.type = IOCType::DOMAIN_NAME;  // DEĞİŞTİ
                     ioc.value = currentString;
                     ioc.offset = stringStart;
                     ioc.context = extractContext(data, stringStart, currentString.length());
                     result.iocs.push_back(ioc);
-                    result.counts[IOCType::DOMAIN]++;
+                    result.counts[IOCType::DOMAIN_NAME]++;  // DEĞİŞTİ
                     result.networkActivitySuspected = true;
                 }
                 else if (currentString.find("http://") != std::string::npos || 
                          currentString.find("https://") != std::string::npos ||
                          currentString.find("ftp://") != std::string::npos) {
                     NetworkIOC ioc;
-                    ioc.type = IOCType::URL;
+                    ioc.type = IOCType::URL_ADDRESS;  // DEĞİŞTİ
                     ioc.value = currentString;
                     ioc.offset = stringStart;
                     ioc.context = extractContext(data, stringStart, currentString.length());
                     result.iocs.push_back(ioc);
-                    result.counts[IOCType::URL]++;
+                    result.counts[IOCType::URL_ADDRESS]++;  // DEĞİŞTİ
                     result.networkActivitySuspected = true;
                 }
                 else if (isValidEmail(currentString)) {
                     NetworkIOC ioc;
-                    ioc.type = IOCType::EMAIL;
+                    ioc.type = IOCType::EMAIL_ADDRESS;  // DEĞİŞTİ
                     ioc.value = currentString;
                     ioc.offset = stringStart;
                     ioc.context = extractContext(data, stringStart, currentString.length());
                     result.iocs.push_back(ioc);
-                    result.counts[IOCType::EMAIL]++;
+                    result.counts[IOCType::EMAIL_ADDRESS]++;  // DEĞİŞTİ
                 }
             }
             currentString.clear();
@@ -764,6 +764,8 @@ void AdvancedAnalyzer::displayShellcodeResults(const ShellcodeAnalysisResult& re
     std::cout << "\033[1;96m╚═════════════════════════════════════════════════════════════╝\033[0m\n";
 }
 
+
+   // macos building fails i had to change it
 void AdvancedAnalyzer::displayIOCResults(const IOCExtractionResult& result) {
     if (result.iocs.empty()) {
         std::cout << "\n\033[92m[+] No network IOCs detected\033[0m\n";
@@ -793,7 +795,7 @@ void AdvancedAnalyzer::displayIOCResults(const IOCExtractionResult& result) {
     for (size_t i = 0; i < displayCount; i++) {
         const auto& ioc = result.iocs[i];
         
-        std::string typeColor = (ioc.type == IOCType::IPV4 || ioc.type == IOCType::URL) ? "\033[91m" : "\033[93m";
+        std::string typeColor = (ioc.type == IOCType::IPV4_ADDRESS || ioc.type == IOCType::URL_ADDRESS) ? "\033[91m" : "\033[93m";  // DEĞİŞTİ
         std::cout << "║ " << typeColor << ioc.value.substr(0, 58) << "\033[0m";
         padding = 60 - std::min(ioc.value.length(), static_cast<size_t>(58));
         for (size_t j = 0; j < padding; j++) std::cout << " ";
@@ -895,13 +897,14 @@ std::string AdvancedAnalyzer::getShellcodeTypeName(ShellcodeType type) {
     }
 }
 
+// For MacOS build fails i had to change it
 std::string AdvancedAnalyzer::getIOCTypeName(IOCType type) {
     switch (type) {
-        case IOCType::IPV4: return "IPv4 Address";
-        case IOCType::IPV6: return "IPv6 Address";
-        case IOCType::URL: return "URL";
-        case IOCType::DOMAIN: return "Domain";
-        case IOCType::EMAIL: return "Email";
+        case IOCType::IPV4_ADDRESS: return "IPv4 Address";
+        case IOCType::IPV6_ADDRESS: return "IPv6 Address";
+        case IOCType::URL_ADDRESS: return "URL";
+        case IOCType::DOMAIN_NAME: return "Domain";
+        case IOCType::EMAIL_ADDRESS: return "Email";
         case IOCType::BITCOIN_ADDRESS: return "Bitcoin Address";
         default: return "Unknown";
     }
