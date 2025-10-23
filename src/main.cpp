@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include "file_handler.hpp"
 #include "hex_viewer.hpp"
 #include "hash_calculator.hpp"
@@ -9,182 +10,276 @@
 #include "security_analyzer.hpp"
 #include "advanced_analyzer.hpp"
 
+void displayBanner() {
+    std::cout << "\n";
+    std::cout << "BinAnalyzer v1.0 - Binary Analysis Tool\n";
+    std::cout << "========================================\n\n";
+}
+
+void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filepath) {
+    std::cout << "[*] File Analysis\n";
+    std::cout << "-----------------\n";
+    std::cout << "File: " << filepath << "\n";
+    std::cout << "Size: " << data.size() << " bytes (" 
+              << std::fixed << std::setprecision(2) 
+              << (data.size() / 1024.0) << " KB)\n";
+    
+    // Hash calculation
+    HashCalculator hashCalc;
+    std::string md5 = hashCalc.calculateMD5(data);
+    std::string sha256 = hashCalc.calculateSHA256(data);
+    std::cout << "MD5:    " << md5 << "\n";
+    std::cout << "SHA256: " << sha256 << "\n";
+    
+    // File type detection
+    bool isPE = false;
+    if (data.size() >= 2) {
+        if (data[0] == 0x4D && data[1] == 0x5A) {
+            std::cout << "Type: \033[93mPE (Windows Executable)\033[0m\n";
+            isPE = true;
+        } else if (data[0] == 0x7F && data[1] == 0x45) {
+            std::cout << "Type: ELF (Linux Binary)\n";
+        } else {
+            std::cout << "Type: Unknown\n";
+        }
+    }
+    
+    // Statistics
+    std::cout << "\n[*] Byte Statistics\n";
+    std::cout << "-------------------\n";
+    
+    size_t nullBytes = 0, printable = 0, control = 0, extended = 0;
+    int byteCounts[256] = {0};
+    
+    size_t sampleSize = std::min(data.size(), static_cast<size_t>(1024 * 1024));
+    for (size_t i = 0; i < sampleSize; i++) {
+        uint8_t byte = data[i];
+        byteCounts[byte]++;
+        
+        if (byte == 0x00) nullBytes++;
+        else if (byte >= 0x20 && byte <= 0x7E) printable++;
+        else if (byte < 0x20) control++;
+        else extended++;
+    }
+    
+    double entropy = 0.0;
+    for (int i = 0; i < 256; i++) {
+        if (byteCounts[i] > 0) {
+            double p = static_cast<double>(byteCounts[i]) / sampleSize;
+            entropy -= p * log2(p);
+        }
+    }
+    
+    std::cout << "NULL bytes:      " << std::fixed << std::setprecision(2) 
+              << (nullBytes * 100.0 / sampleSize) << "%\n";
+    std::cout << "Printable ASCII: " << (printable * 100.0 / sampleSize) << "%\n";
+    std::cout << "Control chars:   " << (control * 100.0 / sampleSize) << "%\n";
+    std::cout << "Extended ASCII:  " << (extended * 100.0 / sampleSize) << "%\n";
+    
+    std::string entropyColor;
+    std::string entropyDesc;
+    if (entropy > 7.5) {
+        entropyColor = "\033[91m";
+        entropyDesc = "High - Encrypted/Packed";
+    } else if (entropy > 6.5) {
+        entropyColor = "\033[93m";
+        entropyDesc = "Medium - Compressed";
+    } else {
+        entropyColor = "\033[92m";
+        entropyDesc = "Low - Uncompressed";
+    }
+    
+    std::cout << "Entropy:         " << entropyColor << std::fixed << std::setprecision(2) 
+              << entropy << "/8.00\033[0m (" << entropyDesc << ")\n";
+    
+    // PE Information
+    if (isPE && data.size() > 0x200) {
+        std::cout << "\n[*] PE Structure\n";
+        std::cout << "----------------\n";
+        
+        uint32_t peOffset = *reinterpret_cast<const uint32_t*>(&data[0x3C]);
+        if (peOffset + 0x100 < data.size()) {
+            uint32_t entryPoint = *reinterpret_cast<const uint32_t*>(&data[peOffset + 40]);
+            uint32_t imageBase = *reinterpret_cast<const uint32_t*>(&data[peOffset + 52]);
+            uint16_t sections = *reinterpret_cast<const uint16_t*>(&data[peOffset + 6]);
+            uint32_t timestamp = *reinterpret_cast<const uint32_t*>(&data[peOffset + 8]);
+            
+            std::cout << "Entry point: \033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
+                      << entryPoint << "\033[0m" << std::dec << "\n";
+            std::cout << "Image base:  \033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
+                      << imageBase << "\033[0m" << std::dec << "\n";
+            std::cout << "Sections:    " << sections << "\n";
+            std::cout << "Timestamp:   " << timestamp << "\n";
+        }
+    }
+    
+    // Hex dump (first 256 bytes)
+    std::cout << "\n[*] Hex Dump (First 256 Bytes)\n";
+    std::cout << "------------------------------\n";
+    std::cout << "Offset    | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F | ASCII\n";
+    std::cout << "----------+--------------------------------------------------+------------------\n";
+    
+    size_t dumpSize = std::min(data.size(), static_cast<size_t>(256));
+    for (size_t i = 0; i < dumpSize; i += 16) {
+        std::cout << "\033[96m" << std::hex << std::setw(8) << std::setfill('0') << i << "\033[0m  | ";
+        
+        // Hex
+        for (size_t j = 0; j < 16 && i + j < dumpSize; j++) {
+            std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                      << static_cast<int>(data[i + j]) << " ";
+        }
+        for (size_t j = dumpSize - i; j < 16; j++) std::cout << "   ";
+        
+        std::cout << "| ";
+        
+        // ASCII
+        for (size_t j = 0; j < 16 && i + j < dumpSize; j++) {
+            uint8_t byte = data[i + j];
+            if (byte >= 0x20 && byte <= 0x7E) {
+                std::cout << static_cast<char>(byte);
+            } else {
+                std::cout << "\033[90m.\033[0m";
+            }
+        }
+        std::cout << std::dec << "\n";
+    }
+    
+    std::cout << "\n";
+}
+
 int main(int argc, char* argv[]) {
-    // Parse command-line arguments first
-    CliOptions options = CliParser::parse(argc, argv);
+    CliParser parser;
+    CliOptions options = parser.parse(argc, argv);
     
     if (options.showHelp) {
-        HexViewer::displayBanner();
         CliParser::printHelp(argv[0]);
         return 0;
     }
     
     if (options.showVersion) {
-        HexViewer::displayBanner();
         CliParser::printVersion();
         return 0;
     }
     
-    // Display banner for normal operations
-    HexViewer::displayBanner();
-
-    // Open file
-    FileHandler fileHandler(options.filename);
-    if (!fileHandler.open()) {
-        std::cerr << "\n\033[91m[!] Error:\033[0m Could not open file '" << options.filename << "'\n\n";
+    if (options.filename.empty()) {
+        std::cerr << "Error: No input file specified\n";
+        std::cerr << "Use --help for usage information\n";
         return 1;
     }
-
-    // Read file data
+    
+      // Load file TODO mem
+    FileHandler fileHandler(options.filename);
+    if (!fileHandler.open()) {
+        std::cerr << "Error: Failed to open file\n";
+        return 1;
+    }
+    
     std::vector<uint8_t> data = fileHandler.readAll();
+    
+    if (data.empty()) {
+        std::cerr << "Error: Failed to read file or file is empty\n";
+        return 1;
+    }
+    
+    displayBanner();
     
     // Strings-only mode
     if (options.stringsOnly) {
-        PEParser peParser;
-        std::vector<std::string> strings = peParser.extractStrings(data, options.minStringLength);
+        std::cout << "[*] String Extraction\n";
+        std::cout << "---------------------\n";
         
-        std::cout << "\n\033[1;96m[*] File:\033[0m " << options.filename << "\n";
-        std::cout << "\033[1;96m[*] Extracted Strings\033[0m (min length " << options.minStringLength << "):\n";
-        std::cout << "\033[90m────────────────────────────────────────────────────────\033[0m\n";
+        std::string currentString;
+        int count = 0;
         
-        for (const auto& str : strings) {
-            std::cout << "  " << str << "\n";
+        for (size_t i = 0; i < data.size(); i++) {
+            if (data[i] >= 0x20 && data[i] <= 0x7E) {
+                currentString += static_cast<char>(data[i]);
+            } else {
+                if (currentString.length() >= static_cast<size_t>(options.minStringLength)) {
+                    std::cout << currentString << "\n";
+                    count++;
+                }
+                currentString.clear();
+            }
         }
         
-        std::cout << "\n\033[92m[+] Total: " << strings.size() << " strings found\033[0m\n\n";
-        fileHandler.close();
+        std::cout << "\nTotal strings: " << count << "\n";
         return 0;
     }
     
-    // Parse PE if applicable
-    PEParser peParser;
-    PEInfo peInfo = peParser.parse(data);
-    
-    std::string fileType = "Unknown";
-    if (peInfo.isPE) {
-        fileType = "PE Executable (" + peInfo.architecture + ", " + peInfo.subsystem + ")";
-    } else if (data.size() >= 4 && data[0] == 0x7F && data[1] == 'E' && data[2] == 'L' && data[3] == 'F') {
-        fileType = "ELF Executable";
-    }
-    
-    // Calculate hashes
-    std::cout << "\033[96m[*] Calculating file hashes...\033[0m\n";
-    std::string md5 = HashCalculator::calculateMD5(data);
-    std::string sha256 = HashCalculator::calculateSHA256(data);
-    
-    // Display results
-    HexViewer viewer;
-    viewer.setColorEnabled(!options.noColor);
-    viewer.displayHeader(options.filename, fileHandler.getSize(), fileType);
-    viewer.displayFileInfo(md5, sha256);
-    viewer.displayStatistics(data);
-    
-    // Display PE info if available
-    if (peInfo.isPE) {
-        std::cout << "║                                                                                       ║\n";
-        std::cout << "║  " << "\033[1m" << "PE Information:" << "\033[0m" << "                                                                     ║\n";
-        std::cout << "║  Entry Point:  0x" << std::hex << std::setfill('0') << std::setw(8) << peInfo.entryPoint << std::dec;
-        std::cout << "                                                            ║\n";
-        std::cout << "║  Image Base:   0x" << std::hex << std::setfill('0') << std::setw(8) << peInfo.imageBase << std::dec;
-        std::cout << "                                                            ║\n";
-        std::cout << "║  Sections:     " << peInfo.numberOfSections;
-        std::cout << "                                                                           ║\n";
-        std::cout << "╠═══════════════════════════════════════════════════════════════════════════════════════╣\n";
-    }
-    
-    // Display hex view with custom offset and length
-    viewer.displayHex(data, options.offset, options.length);
-    
-    // ========================================================================
-    // RED TEAM ANALYSIS MODE - COMPREHENSIVE OFFENSIVE SECURITY ANALYSIS
-    // ========================================================================
+    // Red Team Analysis Mode
     if (options.redTeamMode) {
-        std::cout << "\n\033[1;95m╔═══════════════════════════════════════════════════════════════╗\033[0m\n";
-        std::cout << "\033[1;95m║              RED TEAM ANALYSIS MODE ACTIVATED              ║\033[0m\n";
-        std::cout << "\033[1;95m╚═══════════════════════════════════════════════════════════════╝\033[0m\n";
+        displayBasicInfo(data, options.filename);
         
-        std::cout << "\033[93m[!] Note: Analysis optimized for PE files\033[0m\n";
-        std::cout << "\033[93m[!] Some features may produce false positives on benign files\033[0m\n\n";
-        
-        // Import Table Analysis
-        std::cout << "\033[96m[*] Stage 1/6: Import Table Analysis\033[0m\n";
         ImportAnalyzer importAnalyzer;
         ImportAnalysisResult importResult = importAnalyzer.analyze(data);
+        importAnalyzer.displayResults(importResult);
         
-        if (importResult.suspiciousCount > 0) {
-            importAnalyzer.displayResults(importResult);
-        } else {
-            std::cout << "\033[92m[+] No suspicious imports detected\033[0m\n";
-        }
+        SecurityAnalyzer secAnalyzer;
+        SecurityAnalysisResult secResult = secAnalyzer.analyze(data);
+        secAnalyzer.displayResults(secResult);
         
-        // Security Analysis
-        std::cout << "\n\033[96m[*] Stage 2/6: Security Mitigations Analysis\033[0m\n";
-        SecurityAnalyzer securityAnalyzer;
-        SecurityAnalysisResult securityResult = securityAnalyzer.analyze(data);
-        securityAnalyzer.displayResults(securityResult);
-        
-        // Advanced Analysis
         AdvancedAnalyzer advancedAnalyzer;
+        advancedAnalyzer.runFullAnalysis(data);
         
-        // Packer Detection
-        std::cout << "\n\033[96m[*] Stage 3/6: Packer Detection\033[0m\n";
-        PackerDetectionResult packerResult = advancedAnalyzer.detectPacker(data);
-        advancedAnalyzer.displayPackerResults(packerResult);
-        
-        // Shellcode Detection
-        std::cout << "\n\033[96m[*] Stage 4/6: Shellcode Pattern Analysis\033[0m\n";
-        ShellcodeAnalysisResult shellcodeResult = advancedAnalyzer.detectShellcode(data);
-        advancedAnalyzer.displayShellcodeResults(shellcodeResult);
-        
-        // Network IOC Extraction
-        std::cout << "\n\033[96m[*] Stage 5/6: Network IOC Extraction\033[0m\n";
-        IOCExtractionResult iocResult = advancedAnalyzer.extractIOCs(data);
-        advancedAnalyzer.displayIOCResults(iocResult);
-        
-        // Suspicious Strings Analysis
-        std::cout << "\n\033[96m[*] Stage 6/6: Suspicious Strings Analysis\033[0m\n";
-        StringAnalysisResult stringResult = advancedAnalyzer.analyzeSuspiciousStrings(data);
-        advancedAnalyzer.displayStringResults(stringResult);
-        
-        // Final Red Team Summary
-        std::cout << "\n\033[1;95m╔═══════════════════════════════════════════════════════════════╗\033[0m\n";
-        std::cout << "\033[1;95m║                RED TEAM ANALYSIS COMPLETE                  ║\033[0m\n";
-        std::cout << "\033[1;95m╠═══════════════════════════════════════════════════════════════╣\033[0m\n";
-        
-        // Summary statistics
-        std::cout << "\033[1;95m║\033[0m Suspicious APIs:      " << importResult.suspiciousCount << std::string(35 - std::to_string(importResult.suspiciousCount).length(), ' ') << "\033[1;95m║\033[0m\n";
-        std::cout << "\033[1;95m║\033[0m Security Score:       " << securityResult.securityScore << "/100" << std::string(30, ' ') << "\033[1;95m║\033[0m\n";
-        std::cout << "\033[1;95m║\033[0m Packer Status:        " << (packerResult.isPacked ? "\033[91mPACKED\033[0m" : "\033[92mNOT PACKED\033[0m") << std::string(27, ' ') << "\033[1;95m║\033[0m\n";
-        std::cout << "\033[1;95m║\033[0m Shellcode Patterns:   " << shellcodeResult.totalPatterns << std::string(35 - std::to_string(shellcodeResult.totalPatterns).length(), ' ') << "\033[1;95m║\033[0m\n";
-        std::cout << "\033[1;95m║\033[0m Network IOCs:         " << iocResult.iocs.size() << std::string(35 - std::to_string(iocResult.iocs.size()).length(), ' ') << "\033[1;95m║\033[0m\n";
-        std::cout << "\033[1;95m║\033[0m Suspicious Strings:   " << stringResult.suspiciousStrings.size() << std::string(35 - std::to_string(stringResult.suspiciousStrings.size()).length(), ' ') << "\033[1;95m║\033[0m\n";
-        
-        std::cout << "\033[1;95m╚═══════════════════════════════════════════════════════════════╝\033[0m\n";
+        return 0;
     }
     
-    // Extract and display strings (normal mode)
-    if (!options.redTeamMode) {
-        std::vector<std::string> strings = peParser.extractStrings(data, options.minStringLength);
+    // Standard mode
+    displayBasicInfo(data, options.filename);
+    
+    // PE parsing
+    if (data.size() >= 2 && data[0] == 0x4D && data[1] == 0x5A) {
+        PEParser peParser;
+        PEInfo peInfo = peParser.parse(data);
         
-        if (!strings.empty()) {
-            std::cout << "\n\033[96m[*] Extracted Strings\033[0m (min length " << options.minStringLength << ", showing first 20):\n";
-            std::cout << "\033[90m────────────────────────────────────────────────────────\033[0m\n";
-            
-            size_t count = 0;
-            for (const auto& str : strings) {
-                if (count >= 20) break;
-                std::cout << "  " << str << "\n";
-                count++;
-            }
-            
-            if (strings.size() > 20) {
-                std::cout << "  \033[90m... and " << (strings.size() - 20) << " more strings\033[0m\n";
-            }
+        if (peInfo.isPE) {
+            std::cout << "[*] PE Header\n";
+            std::cout << "-------------\n";
+            std::cout << "Architecture: " << peInfo.architecture << "\n";
+            std::cout << "Subsystem: " << peInfo.subsystem << "\n";
+            std::cout << "Entry point: 0x" << std::hex << peInfo.entryPoint << std::dec << "\n";
+            std::cout << "Image base: 0x" << std::hex << peInfo.imageBase << std::dec << "\n";
+            std::cout << "Sections: " << peInfo.numberOfSections << "\n";
+            std::cout << "Timestamp: " << peInfo.timestamp << "\n";
+            std::cout << "\n";
         }
     }
     
-    std::cout << "\n\033[92m[+] Analysis complete!\033[0m\n\n";
+    // Hex viewer
+    std::cout << "[*] Hex Dump\n";
+    std::cout << "------------\n";
     
-    fileHandler.close();
+    HexViewer hexViewer;
+    hexViewer.displayHex(data, options.offset, options.length);
+    
+    // String extraction
+    std::cout << "\n[*] String Extraction\n";
+    std::cout << "---------------------\n";
+    
+    std::string currentString;
+    std::vector<std::string> strings;
+    
+    for (size_t i = 0; i < data.size(); i++) {
+        if (data[i] >= 0x20 && data[i] <= 0x7E) {
+            currentString += static_cast<char>(data[i]);
+        } else {
+            if (currentString.length() >= static_cast<size_t>(options.minStringLength)) {
+                strings.push_back(currentString);
+            }
+            currentString.clear();
+        }
+    }
+    
+    size_t displayCount = std::min(strings.size(), static_cast<size_t>(20));
+    for (size_t i = 0; i < displayCount; i++) {
+        std::cout << strings[i] << "\n";
+    }
+    
+    if (strings.size() > displayCount) {
+        std::cout << "... and " << (strings.size() - displayCount) << " more\n";
+    }
+    std::cout << "\nTotal strings: " << strings.size() << "\n";
+    
     return 0;
 }

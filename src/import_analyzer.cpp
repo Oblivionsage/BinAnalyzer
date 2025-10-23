@@ -222,75 +222,40 @@ bool ImportAnalyzer::isSuspiciousAPI(const std::string& apiName, ThreatLevel& th
 }
 
 void ImportAnalyzer::displayResults(const ImportAnalysisResult& result) {
-    std::cout << "\n\033[1;96m╔════════════════════════ IMPORT TABLE ANALYSIS ════════════════════════╗\033[0m\n";
+    std::cout << "\n[*] Import Table Analysis\n";
+    std::cout << "-------------------------\n";
     
-    // Overall threat assessment
-    std::cout << "║ " << "\033[1mOverall Threat Level:\033[0m " << getThreatLevelColor(result.overallThreat);
-    std::cout << getThreatLevelString(result.overallThreat) << "\033[0m";
+    std::string threatColor;
+    if (result.overallThreat == ThreatLevel::CRITICAL) threatColor = "\033[91m";
+    else if (result.overallThreat == ThreatLevel::HIGH) threatColor = "\033[91m";
+    else if (result.overallThreat == ThreatLevel::MEDIUM) threatColor = "\033[93m";
+    else threatColor = "\033[92m";
     
-    size_t padding = 50 - getThreatLevelString(result.overallThreat).length();
-    for (size_t i = 0; i < padding; i++) std::cout << " ";
-    std::cout << "║\n";
+    std::cout << "Threat level: " << threatColor << getThreatLevelString(result.overallThreat) << "\033[0m\n";
+    std::cout << "Suspicious APIs: " << result.suspiciousCount << "\n\n";
     
-    std::cout << "║ " << "\033[1mSuspicious APIs Found:\033[0m " << result.suspiciousCount;
-    
-    std::string countStr = std::to_string(result.suspiciousCount);
-    padding = 52 - countStr.length();
-    for (size_t i = 0; i < padding; i++) std::cout << " ";
-    std::cout << "║\n";
-    
-    std::cout << "\033[1;96m╠═══════════════════════════════════════════════════════════════════════╣\033[0m\n";
-    
-    // Category breakdown
     if (!result.categoryCount.empty()) {
-        std::cout << "║ \033[1mCategory Breakdown:\033[0m                                                   ║\n";
-        
+        std::cout << "Categories:\n";
         for (const auto& cat : result.categoryCount) {
-            std::cout << "║   " << getCategoryColor(cat.first) << "●\033[0m ";
-            std::string catStr = getCategoryString(cat.first);
-            std::cout << catStr;
-            
-            padding = 55 - catStr.length();
-            for (size_t i = 0; i < padding; i++) std::cout << " ";
-            std::cout << ": " << cat.second << "      ║\n";
+            std::cout << "  " << getCategoryString(cat.first) << ": " << cat.second << "\n";
         }
+        std::cout << "\n";
     }
     
     if (!result.suspiciousAPIs.empty()) {
-        std::cout << "\033[1;96m╠═══════════════════════════════════════════════════════════════════════╣\033[0m\n";
-        std::cout << "║ \033[1mDetected Suspicious APIs:\033[0m                                             ║\n";
-        std::cout << "\033[1;96m╠═══════════════════════════════════════════════════════════════════════╣\033[0m\n";
-        
-        // Show max 30 APIs to avoid screen flood
-        size_t displayCount = std::min(result.suspiciousAPIs.size(), static_cast<size_t>(30));
-        
+        std::cout << "Detected APIs:\n";
+        size_t displayCount = std::min(result.suspiciousAPIs.size(), static_cast<size_t>(15));
         for (size_t i = 0; i < displayCount; i++) {
-            const auto& func = result.suspiciousAPIs[i];
-            std::cout << "║ " << getThreatLevelColor(func.threat) << "[" << getThreatLevelString(func.threat) << "]\033[0m ";
-            std::cout << "\033[1m" << func.name << "\033[0m";
-            
-            std::string levelStr = getThreatLevelString(func.threat);
-            padding = 55 - func.name.length() - levelStr.length();
-            for (size_t i = 0; i < padding; i++) std::cout << " ";
-            std::cout << "║\n";
-            
-            std::cout << "║       Category: " << getCategoryColor(func.category) << getCategoryString(func.category) << "\033[0m";
-            std::string catStr = getCategoryString(func.category);
-            padding = 51 - catStr.length();
-            for (size_t i = 0; i < padding; i++) std::cout << " ";
-            std::cout << "║\n";
+            const auto& api = result.suspiciousAPIs[i];
+            std::cout << "  \033[93m" << api.name << "\033[0m";
+            std::cout << " (" << getCategoryString(api.category) << ")\n";
         }
         
         if (result.suspiciousAPIs.size() > displayCount) {
-            std::cout << "║ \033[90m... and " << (result.suspiciousAPIs.size() - displayCount) << " more APIs\033[0m";
-            std::string moreStr = "... and " + std::to_string(result.suspiciousAPIs.size() - displayCount) + " more APIs";
-            padding = 68 - moreStr.length();
-            for (size_t i = 0; i < padding; i++) std::cout << " ";
-            std::cout << "║\n";
+            std::cout << "  ... and " << (result.suspiciousAPIs.size() - displayCount) << " more\n";
         }
     }
-    
-    std::cout << "\033[1;96m╚═══════════════════════════════════════════════════════════════════════╝\033[0m\n";
+    std::cout << "\n";
 }
 
 std::string ImportAnalyzer::getThreatLevelString(ThreatLevel level) {

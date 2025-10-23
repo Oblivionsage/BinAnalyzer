@@ -4,7 +4,8 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
-#include <sstream>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 // PE Constants
 #define IMAGE_SCN_MEM_READ                   0x40000000
@@ -25,7 +26,6 @@ SecurityAnalysisResult SecurityAnalyzer::analyze(const std::vector<uint8_t>& dat
     
     if (data.size() < 64) return result;
     
-    // Check if PE
     bool isPE = (data[0] == 0x4D && data[1] == 0x5A);
     if (!isPE) {
         result.threatAssessment = "Non-PE file";
@@ -34,22 +34,12 @@ SecurityAnalysisResult SecurityAnalyzer::analyze(const std::vector<uint8_t>& dat
     
     std::cout << "\033[93m[*] Analyzing security features...\033[0m\n";
     
-    // Parse sections
     result.sections = parseSections(data);
-    
-    // Check security features
     result.features = checkSecurityFeatures(data);
-    
-    // Detect TLS callbacks
     result.tlsCallbacks = detectTLSCallbacks(data);
-    
-    // Detect code caves
     result.codeCaves = detectCodeCaves(data);
-    
-    // Calculate security score
     result.securityScore = calculateSecurityScore(result.features, result.sections);
     
-    // Threat assessment
     if (result.securityScore >= 80) {
         result.threatAssessment = "Well Protected";
     } else if (result.securityScore >= 60) {
@@ -68,47 +58,33 @@ std::vector<SectionInfo> SecurityAnalyzer::parseSections(const std::vector<uint8
     
     if (data.size() < 0x400) return sections;
     
-    // Get PE offset
     uint32_t peOffset = *reinterpret_cast<const uint32_t*>(&data[0x3C]);
     if (peOffset + 0x100 > data.size()) return sections;
     
-    // Check PE signature
     if (data[peOffset] != 0x50 || data[peOffset + 1] != 0x45) return sections;
     
-    // Get number of sections
     uint16_t numberOfSections = *reinterpret_cast<const uint16_t*>(&data[peOffset + 6]);
     uint16_t sizeOfOptionalHeader = *reinterpret_cast<const uint16_t*>(&data[peOffset + 20]);
     
-    // Section table starts after optional header
     size_t sectionTableOffset = peOffset + 24 + sizeOfOptionalHeader;
     
     for (int i = 0; i < numberOfSections && sectionTableOffset + 40 <= data.size(); i++) {
         SectionInfo section;
         
-        // Section name (8 bytes)
         char name[9] = {0};
         memcpy(name, &data[sectionTableOffset], 8);
         section.name = std::string(name);
         
-        // Virtual size
         section.virtualSize = *reinterpret_cast<const uint32_t*>(&data[sectionTableOffset + 8]);
-        
-        // Virtual address
         section.virtualAddress = *reinterpret_cast<const uint32_t*>(&data[sectionTableOffset + 12]);
-        
-        // Raw size
         section.rawSize = *reinterpret_cast<const uint32_t*>(&data[sectionTableOffset + 16]);
-        
-        // Characteristics
         section.characteristics = *reinterpret_cast<const uint32_t*>(&data[sectionTableOffset + 36]);
         
-        // Parse permissions
         section.isReadable = (section.characteristics & IMAGE_SCN_MEM_READ) != 0;
         section.isWritable = (section.characteristics & IMAGE_SCN_MEM_WRITE) != 0;
         section.isExecutable = (section.characteristics & IMAGE_SCN_MEM_EXECUTE) != 0;
         section.isRWX = section.isReadable && section.isWritable && section.isExecutable;
         
-        // Calculate entropy
         uint32_t rawOffset = *reinterpret_cast<const uint32_t*>(&data[sectionTableOffset + 20]);
         if (rawOffset > 0 && rawOffset < data.size() && section.rawSize > 0) {
             size_t sectionSize = std::min(static_cast<size_t>(section.rawSize), data.size() - rawOffset);
@@ -118,7 +94,7 @@ std::vector<SectionInfo> SecurityAnalyzer::parseSections(const std::vector<uint8
         }
         
         sections.push_back(section);
-        sectionTableOffset += 40; // Each section header is 40 bytes
+        sectionTableOffset += 40;
     }
     
     return sections;
@@ -129,18 +105,14 @@ SecurityFeatures SecurityAnalyzer::checkSecurityFeatures(const std::vector<uint8
     
     if (data.size() < 0x200) return features;
     
-    // Get PE offset
     uint32_t peOffset = *reinterpret_cast<const uint32_t*>(&data[0x3C]);
     if (peOffset + 0x100 > data.size()) return features;
     
-    // Optional header offset
     size_t optHeaderOffset = peOffset + 24;
     if (optHeaderOffset + 0x70 > data.size()) return features;
     
-    // Get DllCharacteristics
     uint16_t dllCharacteristics = *reinterpret_cast<const uint16_t*>(&data[optHeaderOffset + 70]);
     
-    // Check features
     features.dynamicBase = (dllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) != 0;
     features.aslr = features.dynamicBase;
     
@@ -154,29 +126,21 @@ SecurityFeatures SecurityAnalyzer::checkSecurityFeatures(const std::vector<uint8
     
     features.highEntropy = (dllCharacteristics & IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA) != 0;
     
-    // GS detection (check for __security_cookie reference - simplified)
-    features.gs = false; // Would need deeper analysis
-    
-    // Authenticode (check for certificate table - simplified)
-    features.authenticode = false; // Would need to parse certificate directory
+    features.gs = false;
+    features.authenticode = false;
     
     return features;
 }
 
 std::vector<TLSCallback> SecurityAnalyzer::detectTLSCallbacks(const std::vector<uint8_t>& data) {
     std::vector<TLSCallback> callbacks;
-    
-    // TLS detection would require parsing TLS directory
-    // This is a simplified placeholder
-    
     return callbacks;
 }
 
 std::vector<CodeCave> SecurityAnalyzer::detectCodeCaves(const std::vector<uint8_t>& data) {
     std::vector<CodeCave> caves;
     
-    // Look for sequences of null bytes (potential code caves)
-    const size_t MIN_CAVE_SIZE = 100; // Minimum 100 bytes
+    const size_t MIN_CAVE_SIZE = 100;
     size_t nullCount = 0;
     size_t caveStart = 0;
     
@@ -191,10 +155,10 @@ std::vector<CodeCave> SecurityAnalyzer::detectCodeCaves(const std::vector<uint8_
                 CodeCave cave;
                 cave.offset = caveStart;
                 cave.size = nullCount;
-                cave.sectionName = "unknown"; // Would need section mapping
+                cave.sectionName = "unknown";
                 caves.push_back(cave);
                 
-                if (caves.size() >= 10) break; // Limit to 10 caves
+                if (caves.size() >= 10) break;
             }
             nullCount = 0;
         }
@@ -225,7 +189,6 @@ double SecurityAnalyzer::calculateSectionEntropy(const std::vector<uint8_t>& dat
 int SecurityAnalyzer::calculateSecurityScore(const SecurityFeatures& features, const std::vector<SectionInfo>& sections) {
     int score = 0;
     
-    // Security features scoring
     if (features.aslr) score += 20;
     if (features.dep) score += 20;
     if (features.cfg) score += 15;
@@ -234,62 +197,106 @@ int SecurityAnalyzer::calculateSecurityScore(const SecurityFeatures& features, c
     if (features.gs) score += 10;
     if (features.authenticode) score += 15;
     
-    // Penalty for RWX sections (MAJOR RED FLAG)
     for (const auto& section : sections) {
         if (section.isRWX) {
-            score -= 30; // Heavy penalty
+            score -= 30;
         }
     }
     
-    // Ensure score is between 0-100
     return std::max(0, std::min(100, score));
 }
 
-void SecurityAnalyzer::displayResults(const SecurityAnalysisResult& result) {
-    std::cout << "\n\033[1;96m╔═══════════════════════ SECURITY ANALYSIS ═══════════════════════╗\033[0m\n";
-    
-    // Overall assessment
-    std::string assessmentColor;
-    if (result.securityScore >= 80) assessmentColor = "\033[92m"; // Green
-    else if (result.securityScore >= 60) assessmentColor = "\033[93m"; // Yellow
-    else if (result.securityScore >= 40) assessmentColor = "\033[91m"; // Red
-    else assessmentColor = "\033[95m"; // Magenta (critical)
-    
-    std::cout << "║ " << "\033[1mSecurity Score:\033[0m " << assessmentColor << result.securityScore << "/100\033[0m";
-    std::cout << "  -  " << assessmentColor << result.threatAssessment << "\033[0m";
-    
-    size_t padding = 65 - (std::to_string(result.securityScore).length() + result.threatAssessment.length() + 10);
-    if (padding > 0 && padding < 100) {
-        for (size_t i = 0; i < padding; i++) std::cout << " ";
+// ============================================================================
+// MODERN GRID DISPLAY - HELPER FUNCTIONS
+// ============================================================================
+
+int SecurityAnalyzer::getTerminalWidth() {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    int width = w.ws_col;
+    return (width > 0 && width < 300) ? width : 120;
+}
+
+void SecurityAnalyzer::displayProgressBar(const std::string& label, int value, int max, int width) {
+    if (!label.empty()) {
+        std::cout << label << " ";
     }
-    std::cout << "║\n";
     
-    std::cout << "\033[1;96m╠═════════════════════════════════════════════════════════════════╣\033[0m\n";
+    int filled = (value * width) / max;
+    std::string color;
     
-    // Security Features
-    std::cout << "║ \033[1mSecurity Features:\033[0m                                          ║\n";
+    if (value >= 80) color = "\033[92m";
+    else if (value >= 60) color = "\033[93m";
+    else if (value >= 40) color = "\033[91m";
+    else color = "\033[95m";
     
-    // Helper function to print features
-    auto printFeature = [](const std::string& name, bool enabled) {
-        std::cout << "║   " << (enabled ? "\033[92m✓\033[0m" : "\033[91m✗\033[0m") << " " << name;
-        size_t len = name.length();
-        if (len < 56) {
-            for (size_t i = 0; i < (56 - len); i++) std::cout << " ";
-        }
-        std::cout << "║\n";
-    };
+    std::cout << "[" << color;
+    for (int i = 0; i < width; i++) {
+        std::cout << (i < filled ? "█" : "░");
+    }
+    std::cout << "\033[0m] " << value << "%";
+}
+
+std::string SecurityAnalyzer::getScoreColor(int score) {
+    if (score >= 80) return "\033[92m";
+    else if (score >= 60) return "\033[93m";
+    else if (score >= 40) return "\033[91m";
+    else return "\033[95m";
+}
+
+std::string SecurityAnalyzer::getSectionColor(const SectionInfo& section) {
+    if (section.isRWX) {
+        return "\033[95m";
+    } else if (section.isWritable && section.isExecutable) {
+        return "\033[91m";
+    } else if (section.isExecutable) {
+        return "\033[93m";
+    } else if (section.isWritable) {
+        return "\033[94m";
+    } else {
+        return "\033[92m";
+    }
+}
+
+std::string SecurityAnalyzer::padRight(const std::string& str, int width) {
+    int visibleLen = 0;
+    bool inEscape = false;
+    for (char c : str) {
+        if (c == '\033') inEscape = true;
+        else if (inEscape && c == 'm') inEscape = false;
+        else if (!inEscape) visibleLen++;
+    }
     
-    printFeature("ASLR (Address Space Layout Randomization)", result.features.aslr);
-    printFeature("DEP/NX (Data Execution Prevention)", result.features.dep);
-    printFeature("CFG (Control Flow Guard)", result.features.cfg);
-    printFeature("SEH (Structured Exception Handling)", result.features.seh);
-    printFeature("High Entropy ASLR (64-bit)", result.features.highEntropy);
+    int padding = width - visibleLen;
+    if (padding > 0) {
+        return str + std::string(padding, ' ');
+    }
+    return str;
+}
+
+void SecurityAnalyzer::displayResults(const SecurityAnalysisResult& result) {
+    std::cout << "\n[*] Security Analysis\n";
+    std::cout << "---------------------\n";
     
-    // Section Analysis
+    // Score
+    std::string scoreColor = getScoreColor(result.securityScore);
+    std::cout << "Security score: " << scoreColor << result.securityScore << "/100\033[0m";
+    std::cout << " (" << result.threatAssessment << ")\n\n";
+    
+    // Features
+    std::cout << "Security features:\n";
+    std::cout << "  ASLR:       " << (result.features.aslr ? "\033[92menabled\033[0m" : "\033[91mdisabled\033[0m") << "\n";
+    std::cout << "  DEP/NX:     " << (result.features.dep ? "\033[92menabled\033[0m" : "\033[91mdisabled\033[0m") << "\n";
+    std::cout << "  CFG:        " << (result.features.cfg ? "\033[92menabled\033[0m" : "\033[91mdisabled\033[0m") << "\n";
+    std::cout << "  SafeSEH:    " << (result.features.seh ? "\033[92menabled\033[0m" : "\033[91mdisabled\033[0m") << "\n";
+    std::cout << "  High ASLR:  " << (result.features.highEntropy ? "\033[92menabled\033[0m" : "\033[91mdisabled\033[0m") << "\n";
+    std::cout << "\n";
+    
+    // Sections
     if (!result.sections.empty()) {
-        std::cout << "\033[1;96m╠═════════════════════════════════════════════════════════════════╣\033[0m\n";
-        std::cout << "║ \033[1mSection Analysis:\033[0m                                           ║\n";
-        std::cout << "\033[1;96m╠═════════════════════════════════════════════════════════════════╣\033[0m\n";
+        std::cout << "Sections:\n";
+        std::cout << "  Name      Perms  Entropy\n";
+        std::cout << "  --------  -----  -------\n";
         
         for (const auto& section : result.sections) {
             std::string perms;
@@ -297,57 +304,28 @@ void SecurityAnalyzer::displayResults(const SecurityAnalysisResult& result) {
             perms += section.isWritable ? "W" : "-";
             perms += section.isExecutable ? "X" : "-";
             
-            std::string color = getSectionColor(section);
+            std::string color = "";
+            if (section.isRWX) color = "\033[95m";
+            else if (section.isWritable && section.isExecutable) color = "\033[91m";
+            else if (section.entropy > 7.0) color = "\033[93m";
             
-            std::cout << "║ " << color << std::left << std::setw(10) << section.name << "\033[0m";
-            std::cout << "  " << perms << "  ";
-            std::cout << "Entropy: " << std::fixed << std::setprecision(2) << section.entropy;
+            std::cout << "  " << color << std::left << std::setw(8) << section.name 
+                      << "  " << perms << "    " 
+                      << std::fixed << std::setprecision(2) << section.entropy;
             
-            if (section.isRWX) {
-                std::cout << "  \033[95m[RWX!]\033[0m";
-            } else if (section.isWritable && section.isExecutable) {
-                std::cout << "  \033[91m[WX!]\033[0m";
-            }
-            
-            // Simple padding
-            std::cout << "     ║\n";
+            if (section.isRWX) std::cout << "  [RWX!]";
+            std::cout << "\033[0m\n";
         }
+        std::cout << "\n";
     }
     
-    // Code Caves
+    // Code caves
     if (!result.codeCaves.empty()) {
-        std::cout << "\033[1;96m╠═════════════════════════════════════════════════════════════════╣\033[0m\n";
-        std::cout << "║ \033[1mCode Caves:\033[0m " << result.codeCaves.size() << " potential injection points";
-        
-        size_t caveCountLen = std::to_string(result.codeCaves.size()).length();
-        padding = 40 - caveCountLen;
-        if (padding > 0 && padding < 100) {
-            for (size_t i = 0; i < padding; i++) std::cout << " ";
+        std::cout << "Code caves: " << result.codeCaves.size() << " found\n";
+        for (size_t i = 0; i < std::min(result.codeCaves.size(), static_cast<size_t>(3)); i++) {
+            std::cout << "  \033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
+                      << result.codeCaves[i].offset << "\033[0m" << std::dec 
+                      << "  (" << result.codeCaves[i].size << " bytes)\n";
         }
-        std::cout << "║\n";
-        
-        size_t displayCount = std::min(result.codeCaves.size(), static_cast<size_t>(5));
-        for (size_t i = 0; i < displayCount; i++) {
-            const auto& cave = result.codeCaves[i];
-            std::cout << "║   0x" << std::hex << std::setfill('0') << std::setw(8) << cave.offset;
-            std::cout << " - " << std::dec << cave.size << " bytes";
-            std::cout << "                               ║\n";
-        }
-    }
-    
-    std::cout << "\033[1;96m╚═════════════════════════════════════════════════════════════════╝\033[0m\n";
-}
-
-std::string SecurityAnalyzer::getSectionColor(const SectionInfo& section) {
-    if (section.isRWX) {
-        return "\033[95m"; // Magenta - CRITICAL
-    } else if (section.isWritable && section.isExecutable) {
-        return "\033[91m"; // Red - HIGH RISK
-    } else if (section.isExecutable) {
-        return "\033[93m"; // Yellow
-    } else if (section.isWritable) {
-        return "\033[94m"; // Blue
-    } else {
-        return "\033[92m"; // Green
     }
 }
