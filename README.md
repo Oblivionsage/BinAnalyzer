@@ -254,7 +254,7 @@ See [Issues](https://github.com/Oblivionsage/BinAnalyzer/issues) for detailed fe
 
 ---
 
-## ⚠️ LEGAL DISCLAIMER
+## Legal Disclaimer
 
 **This tool is for authorized security research and educational purposes only.**
 
