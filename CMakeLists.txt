@@ -4,10 +4,16 @@ project(BinAnalyzer)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Find required packages
 find_package(OpenSSL REQUIRED)
 
+# Find Capstone
+find_library(CAPSTONE_LIBRARY capstone REQUIRED)
+
+# Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+# Source files
 add_executable(binanalyzer
     src/main.cpp
     src/file_handler.cpp
@@ -22,6 +28,11 @@ add_executable(binanalyzer
     src/ioc_extractor.cpp
     src/string_analyzer.cpp
     src/advanced_analyzer.cpp
+    src/disassembler.cpp
 )
 
-target_link_libraries(binanalyzer OpenSSL::Crypto)
+# Link libraries
+target_link_libraries(binanalyzer 
+    OpenSSL::Crypto
+    ${CAPSTONE_LIBRARY}
+)

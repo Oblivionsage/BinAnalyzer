@@ -26,6 +26,18 @@ CliOptions CliParser::parse(int argc, char* argv[]) {
         else if (arg == "--red-team" || arg == "-r") {
             options.redTeamMode = true;
         }
+        else if (arg == "--disasm" || arg == "-d") {
+            options.disasmMode = true;
+            // Check if next arg is a number (instruction count)
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                char* endptr;
+                long count = std::strtol(argv[i + 1], &endptr, 10);
+                if (*endptr == '\0' && count > 0) {
+                    options.disasmCount = static_cast<size_t>(count);
+                    i++;
+                }
+            }
+        }
         else if (arg == "--offset" || arg == "-o") {
             if (i + 1 < argc) {
                 options.offset = std::strtoul(argv[++i], nullptr, 0);
@@ -80,12 +92,15 @@ void CliParser::printHelp(const char* programName) {
     std::cout << "  \033[96m-o, --offset <num>\033[0m      Start hex dump at offset (default: 0)\n";
     std::cout << "  \033[96m-l, --length <num>\033[0m      Number of bytes to display (default: 256)\n";
     std::cout << "  \033[96m-m, --min-string <num>\033[0m  Minimum string length (default: 5)\n";
+    std::cout << "  \033[96m-d, --disasm [count]\033[0m    Disassemble instructions (default: 50)\n";
     std::cout << "  \033[96m--no-color\033[0m              Disable colored output\n";
     std::cout << "  \033[96m--strings-only\033[0m          Only extract and display strings\n";
     std::cout << "  \033[96m-r, --red-team\033[0m          Enable Red Team analysis mode\n";
     
     std::cout << "\n\033[1mEXAMPLES:\033[0m\n";
     std::cout << "  " << programName << " /bin/ls\n";
+    std::cout << "  " << programName << " --disasm /bin/ls\n";
+    std::cout << "  " << programName << " --disasm 100 --offset 0x1000 malware.exe\n";
     std::cout << "  " << programName << " --offset 0x1000 --length 512 malware.exe\n";
     std::cout << "  " << programName << " --strings-only --min-string 10 binary.dll\n";
     std::cout << "  " << programName << " --red-team suspicious.exe\n";
