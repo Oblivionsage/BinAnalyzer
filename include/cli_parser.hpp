@@ -13,7 +13,8 @@ struct CliOptions {
     bool redTeamMode = false;
     bool disasmMode = false;
     size_t minStringLength = 5;
-    size_t disasmCount = 50;  // Number of instructions to disassemble
+    size_t disasmCount = 50;
+    std::string architecture = "auto";  // x86, x64, arm, arm64, thumb, auto
 };
 class CliParser {
 public:

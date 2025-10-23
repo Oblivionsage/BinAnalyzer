@@ -17,43 +17,77 @@ void displayBanner() {
     std::cout << "========================================\n\n";
 }
 
-size_t findEntryPoint(const std::vector<uint8_t>& data, bool& is64bit) {
+BinAnalyzer::Architecture detectArchitecture(const std::vector<uint8_t>& data, size_t& entryPoint) {
     // Check PE file
     if (data.size() >= 0x200 && data[0] == 0x4D && data[1] == 0x5A) {
         uint32_t peOffset = *reinterpret_cast<const uint32_t*>(&data[0x3C]);
         if (peOffset + 0x100 < data.size()) {
-            // Check PE signature
             if (data[peOffset] == 'P' && data[peOffset + 1] == 'E') {
                 uint16_t machine = *reinterpret_cast<const uint16_t*>(&data[peOffset + 4]);
-                is64bit = (machine == 0x8664);
-                
-                // Get AddressOfEntryPoint (RVA)
                 uint32_t entryRVA = *reinterpret_cast<const uint32_t*>(&data[peOffset + 40]);
-                return entryRVA;
+                entryPoint = entryRVA;
+                
+                // PE machine types
+                switch (machine) {
+                    case 0x014c: return BinAnalyzer::Architecture::X86_32;  // IMAGE_FILE_MACHINE_I386
+                    case 0x8664: return BinAnalyzer::Architecture::X86_64;  // IMAGE_FILE_MACHINE_AMD64
+                    case 0x01c0: return BinAnalyzer::Architecture::ARM_32;  // IMAGE_FILE_MACHINE_ARM
+                    case 0xaa64: return BinAnalyzer::Architecture::ARM_64;  // IMAGE_FILE_MACHINE_ARM64
+                    case 0x01c2: return BinAnalyzer::Architecture::THUMB;   // IMAGE_FILE_MACHINE_THUMB
+                }
             }
         }
     }
     // Check ELF file
     else if (data.size() >= 64 && data[0] == 0x7F && data[1] == 0x45) {
-        is64bit = (data[4] == 2);
+        uint8_t elfClass = data[4];  // 1=32-bit, 2=64-bit
+        uint16_t machine = 0;
         
-        if (is64bit && data.size() >= 0x40) {
+        if (elfClass == 2 && data.size() >= 0x40) {
+            // ELF64
+            machine = *reinterpret_cast<const uint16_t*>(&data[0x12]);
             uint64_t entry = *reinterpret_cast<const uint64_t*>(&data[0x18]);
             if (entry < 0x1000000) {
-                return static_cast<size_t>(entry);
+                entryPoint = static_cast<size_t>(entry);
             }
-        } else if (!is64bit && data.size() >= 0x28) {
+        } else if (elfClass == 1 && data.size() >= 0x28) {
+            // ELF32
+            machine = *reinterpret_cast<const uint16_t*>(&data[0x12]);
             uint32_t entry = *reinterpret_cast<const uint32_t*>(&data[0x18]);
             if (entry < 0x1000000) {
-                return static_cast<size_t>(entry);
+                entryPoint = static_cast<size_t>(entry);
             }
+        }
+        
+        // ELF machine types
+        switch (machine) {
+            case 0x03:   return BinAnalyzer::Architecture::X86_32;  // EM_386
+            case 0x3E:   return BinAnalyzer::Architecture::X86_64;  // EM_X86_64
+            case 0x28:   return BinAnalyzer::Architecture::ARM_32;  // EM_ARM
+            case 0xB7:   return BinAnalyzer::Architecture::ARM_64;  // EM_AARCH64
+        }
+    }
+    // Check Mach-O (iOS/macOS)
+    else if (data.size() >= 32) {
+        uint32_t magic = *reinterpret_cast<const uint32_t*>(&data[0]);
+        
+        if (magic == 0xfeedface || magic == 0xcefaedfe) {
+            // Mach-O 32-bit
+            uint32_t cputype = *reinterpret_cast<const uint32_t*>(&data[4]);
+            if (cputype == 12) return BinAnalyzer::Architecture::ARM_32;  // CPU_TYPE_ARM
+            if (cputype == 7)  return BinAnalyzer::Architecture::X86_32;
+        } else if (magic == 0xfeedfacf || magic == 0xcffaedfe) {
+            // Mach-O 64-bit
+            uint32_t cputype = *reinterpret_cast<const uint32_t*>(&data[4]);
+            if (cputype == 0x0100000c) return BinAnalyzer::Architecture::ARM_64;  // CPU_TYPE_ARM64
+            if (cputype == 0x01000007) return BinAnalyzer::Architecture::X86_64;
         }
     }
     
-    return 0;
+    return BinAnalyzer::Architecture::X86_64;  // Default
 }
 
-void displayDisassembly(const std::vector<uint8_t>& data, size_t offset, size_t count, bool is64bit) {
+void displayDisassembly(const std::vector<uint8_t>& data, size_t offset, size_t count, BinAnalyzer::Architecture arch) {
     std::cout << "[*] Disassembly\n";
     std::cout << "---------------\n";
     
@@ -65,7 +99,7 @@ void displayDisassembly(const std::vector<uint8_t>& data, size_t offset, size_t 
     size_t maxSize = std::min(data.size() - offset, static_cast<size_t>(4096));
     const uint8_t* code = data.data() + offset;
     
-    BinAnalyzer::Disassembler disasm(is64bit);
+    BinAnalyzer::Disassembler disasm(arch);
     auto instructions = disasm.disassemble(code, maxSize, offset);
     
     if (instructions.empty()) {
@@ -81,24 +115,19 @@ void displayDisassembly(const std::vector<uint8_t>& data, size_t offset, size_t 
     for (size_t i = 0; i < displayCount; i++) {
         const auto& inst = instructions[i];
         
-        // Address
         std::cout << "\033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
                   << inst.address << "\033[0m | ";
         
-        // Bytes (hex)
         for (size_t j = 0; j < inst.size && j < 8; j++) {
             std::cout << std::hex << std::setw(2) << std::setfill('0') 
                       << static_cast<int>(inst.bytes[j]) << " ";
         }
         
-        // Padding for alignment
         for (size_t j = inst.size; j < 8; j++) {
             std::cout << "   ";
         }
         
         std::cout << "| ";
-        
-        // Instruction
         std::cout << "\033[93m" << inst.mnemonic << "\033[0m";
         
         if (!inst.operands.empty()) {
@@ -111,7 +140,7 @@ void displayDisassembly(const std::vector<uint8_t>& data, size_t offset, size_t 
     std::cout << "\nDisassembled " << displayCount << " instructions\n\n";
 }
 
-void displayQuickDisassembly(const std::vector<uint8_t>& data, size_t offset, bool is64bit) {
+void displayQuickDisassembly(const std::vector<uint8_t>& data, size_t offset, BinAnalyzer::Architecture arch) {
     if (offset >= data.size()) {
         return;
     }
@@ -122,7 +151,7 @@ void displayQuickDisassembly(const std::vector<uint8_t>& data, size_t offset, bo
     size_t maxSize = std::min(data.size() - offset, static_cast<size_t>(2048));
     const uint8_t* code = data.data() + offset;
     
-    BinAnalyzer::Disassembler disasm(is64bit);
+    BinAnalyzer::Disassembler disasm(arch);
     auto instructions = disasm.disassemble(code, maxSize, offset);
     
     if (instructions.empty()) {
@@ -130,7 +159,6 @@ void displayQuickDisassembly(const std::vector<uint8_t>& data, size_t offset, bo
         return;
     }
     
-    // Display first 20 instructions with highlighting
     size_t displayCount = std::min(instructions.size(), static_cast<size_t>(20));
     
     int calls = 0, jumps = 0, simd = 0;
@@ -138,33 +166,32 @@ void displayQuickDisassembly(const std::vector<uint8_t>& data, size_t offset, bo
     for (size_t i = 0; i < displayCount; i++) {
         const auto& inst = instructions[i];
         
-        // Check for interesting instructions
-        bool isCall = (inst.mnemonic == "call");
-        bool isJump = (inst.mnemonic[0] == 'j' && inst.mnemonic != "jmp");
-        bool isJmp = (inst.mnemonic == "jmp");
+        bool isCall = (inst.mnemonic == "call" || inst.mnemonic == "bl" || inst.mnemonic == "blx");
+        bool isJump = (inst.mnemonic[0] == 'j' && inst.mnemonic != "jmp") || 
+                      (inst.mnemonic[0] == 'b' && inst.mnemonic != "bl" && inst.mnemonic != "blx");
+        bool isJmp = (inst.mnemonic == "jmp" || inst.mnemonic == "b");
         bool isSIMD = (inst.operands.find("xmm") != std::string::npos || 
-                       inst.operands.find("ymm") != std::string::npos);
-        bool isSyscall = (inst.mnemonic == "syscall" || inst.mnemonic == "int");
+                       inst.operands.find("ymm") != std::string::npos ||
+                       inst.mnemonic[0] == 'v');  // ARM NEON (vmov, vadd, etc)
+        bool isSyscall = (inst.mnemonic == "syscall" || inst.mnemonic == "int" || inst.mnemonic == "svc");
         
         if (isCall) calls++;
         if (isJump || isJmp) jumps++;
         if (isSIMD) simd++;
         
-        // Address
         std::cout << "\033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
                   << inst.address << "\033[0m  ";
         
-        // Instruction with highlighting
         if (isCall) {
-            std::cout << "\033[1;91m" << inst.mnemonic << "\033[0m"; // Red bold for calls
+            std::cout << "\033[1;91m" << inst.mnemonic << "\033[0m";
         } else if (isSyscall) {
-            std::cout << "\033[1;95m" << inst.mnemonic << "\033[0m"; // Magenta for syscalls
+            std::cout << "\033[1;95m" << inst.mnemonic << "\033[0m";
         } else if (isJump || isJmp) {
-            std::cout << "\033[1;93m" << inst.mnemonic << "\033[0m"; // Yellow for jumps
+            std::cout << "\033[1;93m" << inst.mnemonic << "\033[0m";
         } else if (isSIMD) {
-            std::cout << "\033[1;94m" << inst.mnemonic << "\033[0m"; // Blue for SIMD
+            std::cout << "\033[1;94m" << inst.mnemonic << "\033[0m";
         } else {
-            std::cout << "\033[90m" << inst.mnemonic << "\033[0m"; // Gray for normal
+            std::cout << "\033[90m" << inst.mnemonic << "\033[0m";
         }
         
         if (!inst.operands.empty()) {
@@ -174,7 +201,6 @@ void displayQuickDisassembly(const std::vector<uint8_t>& data, size_t offset, bo
         std::cout << "\n" << std::dec;
     }
     
-    // Summary
     std::cout << "\n\033[90m[Summary: " << calls << " calls, " << jumps << " jumps";
     if (simd > 0) std::cout << ", " << simd << " SIMD ops";
     std::cout << "]\033[0m\n";
@@ -189,14 +215,12 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
               << std::fixed << std::setprecision(2) 
               << (data.size() / 1024.0) << " KB)\n";
     
-    // Hash calculation
     HashCalculator hashCalc;
     std::string md5 = hashCalc.calculateMD5(data);
     std::string sha256 = hashCalc.calculateSHA256(data);
     std::cout << "MD5:    " << md5 << "\n";
     std::cout << "SHA256: " << sha256 << "\n";
     
-    // File type detection
     bool isPE = false;
     if (data.size() >= 2) {
         if (data[0] == 0x4D && data[1] == 0x5A) {
@@ -204,12 +228,19 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
             isPE = true;
         } else if (data[0] == 0x7F && data[1] == 0x45) {
             std::cout << "Type: ELF (Linux Binary)\n";
+        } else if (data.size() >= 4) {
+            uint32_t magic = *reinterpret_cast<const uint32_t*>(&data[0]);
+            if (magic == 0xfeedface || magic == 0xcefaedfe || 
+                magic == 0xfeedfacf || magic == 0xcffaedfe) {
+                std::cout << "Type: \033[92mMach-O (macOS/iOS Binary)\033[0m\n";
+            } else {
+                std::cout << "Type: Unknown\n";
+            }
         } else {
             std::cout << "Type: Unknown\n";
         }
     }
     
-    // Statistics
     std::cout << "\n[*] Byte Statistics\n";
     std::cout << "-------------------\n";
     
@@ -257,7 +288,6 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
     std::cout << "Entropy:         " << entropyColor << std::fixed << std::setprecision(2) 
               << entropy << "/8.00\033[0m (" << entropyDesc << ")\n";
     
-    // PE Information
     if (isPE && data.size() > 0x200) {
         std::cout << "\n[*] PE Structure\n";
         std::cout << "----------------\n";
@@ -278,7 +308,6 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
         }
     }
     
-    // Hex dump (first 256 bytes)
     std::cout << "\n[*] Hex Dump (First 256 Bytes)\n";
     std::cout << "------------------------------\n";
     std::cout << "Offset    | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F | ASCII\n";
@@ -288,7 +317,6 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
     for (size_t i = 0; i < dumpSize; i += 16) {
         std::cout << "\033[96m" << std::hex << std::setw(8) << std::setfill('0') << i << "\033[0m  | ";
         
-        // Hex
         for (size_t j = 0; j < 16 && i + j < dumpSize; j++) {
             std::cout << std::hex << std::setw(2) << std::setfill('0') 
                       << static_cast<int>(data[i + j]) << " ";
@@ -297,7 +325,6 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
         
         std::cout << "| ";
         
-        // ASCII
         for (size_t j = 0; j < 16 && i + j < dumpSize; j++) {
             uint8_t byte = data[i + j];
             if (byte >= 0x20 && byte <= 0x7E) {
@@ -332,7 +359,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // Load file
     FileHandler fileHandler(options.filename);
     if (!fileHandler.open()) {
         std::cerr << "Error: Failed to open file\n";
@@ -350,39 +376,39 @@ int main(int argc, char* argv[]) {
     
     // Disassembly mode
     if (options.disasmMode) {
-        bool is64bit = true;
         size_t entryPoint = 0;
+        BinAnalyzer::Architecture arch;
         
-        if (options.offset != 0) {
-            entryPoint = options.offset;
-        } else {
-            entryPoint = findEntryPoint(data, is64bit);
-        }
-        
-        if (options.offset != 0) {
-            if (data.size() >= 0x200 && data[0] == 0x4D && data[1] == 0x5A) {
-                uint32_t peOffset = *reinterpret_cast<const uint32_t*>(&data[0x3C]);
-                if (peOffset + 0x18 < data.size()) {
-                    uint16_t machine = *reinterpret_cast<const uint16_t*>(&data[peOffset + 4]);
-                    is64bit = (machine == 0x8664);
-                }
+        // User specified architecture or auto-detect
+        if (options.architecture != "auto") {
+            arch = BinAnalyzer::string_to_architecture(options.architecture);
+            entryPoint = (options.offset != 0) ? options.offset : 0;
+            
+            if (arch == BinAnalyzer::Architecture::AUTO) {
+                std::cerr << "Error: Invalid architecture '" << options.architecture << "'\n";
+                std::cerr << "Valid options: x86, x64, arm, arm64, thumb, auto\n";
+                return 1;
             }
-            else if (data.size() >= 5 && data[0] == 0x7F && data[1] == 0x45) {
-                is64bit = (data[4] == 2);
+        } else {
+            arch = detectArchitecture(data, entryPoint);
+            if (options.offset != 0) {
+                entryPoint = options.offset;
             }
         }
         
         std::cout << "[*] File: " << options.filename << "\n";
-        std::cout << "Architecture: " << (is64bit ? "x86-64" : "x86-32") << "\n";
+        std::cout << "Architecture: " << BinAnalyzer::architecture_to_string(arch) << "\n";
         std::cout << "Entry Point: 0x" << std::hex << entryPoint << std::dec;
         if (options.offset != 0) {
             std::cout << " (user-specified)";
+        } else if (options.architecture != "auto") {
+            std::cout << " (user-specified arch)";
         } else {
             std::cout << " (auto-detected)";
         }
         std::cout << "\n\n";
         
-        displayDisassembly(data, entryPoint, options.disasmCount, is64bit);
+        displayDisassembly(data, entryPoint, options.disasmCount, arch);
         return 0;
     }
     
@@ -431,12 +457,11 @@ int main(int argc, char* argv[]) {
     // Standard mode with quick disassembly
     displayBasicInfo(data, options.filename);
     
-    // Quick disassembly preview
-    bool is64bit = true;
-    size_t entryPoint = findEntryPoint(data, is64bit);
+    size_t entryPoint = 0;
+    BinAnalyzer::Architecture arch = detectArchitecture(data, entryPoint);
     
     if (entryPoint > 0 && entryPoint < data.size()) {
-        displayQuickDisassembly(data, entryPoint, is64bit);
+        displayQuickDisassembly(data, entryPoint, arch);
     }
     
     // PE parsing

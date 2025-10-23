@@ -38,6 +38,15 @@ CliOptions CliParser::parse(int argc, char* argv[]) {
                 }
             }
         }
+        else if (arg == "--arch" || arg == "-a") {
+            if (i + 1 < argc) {
+                options.architecture = argv[++i];
+            } else {
+                std::cerr << "Error: --arch requires a value (x86, x64, arm, arm64, thumb)\n";
+                options.showHelp = true;
+                return options;
+            }
+        }
         else if (arg == "--offset" || arg == "-o") {
             if (i + 1 < argc) {
                 options.offset = std::strtoul(argv[++i], nullptr, 0);
@@ -93,6 +102,7 @@ void CliParser::printHelp(const char* programName) {
     std::cout << "  \033[96m-l, --length <num>\033[0m      Number of bytes to display (default: 256)\n";
     std::cout << "  \033[96m-m, --min-string <num>\033[0m  Minimum string length (default: 5)\n";
     std::cout << "  \033[96m-d, --disasm [count]\033[0m    Disassemble instructions (default: 50)\n";
+    std::cout << "  \033[96m-a, --arch <arch>\033[0m       Architecture: x86, x64, arm, arm64, thumb, auto\n";
     std::cout << "  \033[96m--no-color\033[0m              Disable colored output\n";
     std::cout << "  \033[96m--strings-only\033[0m          Only extract and display strings\n";
     std::cout << "  \033[96m-r, --red-team\033[0m          Enable Red Team analysis mode\n";
@@ -100,6 +110,8 @@ void CliParser::printHelp(const char* programName) {
     std::cout << "\n\033[1mEXAMPLES:\033[0m\n";
     std::cout << "  " << programName << " /bin/ls\n";
     std::cout << "  " << programName << " --disasm /bin/ls\n";
+    std::cout << "  " << programName << " --disasm --arch arm64 firmware.bin\n";
+    std::cout << "  " << programName << " --disasm --arch thumb --offset 0x1000 app.elf\n";
     std::cout << "  " << programName << " --disasm 100 --offset 0x1000 malware.exe\n";
     std::cout << "  " << programName << " --offset 0x1000 --length 512 malware.exe\n";
     std::cout << "  " << programName << " --strings-only --min-string 10 binary.dll\n";
@@ -110,6 +122,7 @@ void CliParser::printHelp(const char* programName) {
 void CliParser::printVersion() {
     std::cout << "\n\033[1;96mBinAnalyzer\033[0m version \033[1;93m1.0\033[0m\n";
     std::cout << "Modern Binary Analysis Tool\n";
+    std::cout << "Supported architectures: x86-32, x86-64, ARM, ARM64, ARM Thumb\n";
     std::cout << "Copyright (c) 2025 Oblivionsage\n";
     std::cout << "License: MIT\n";
     std::cout << "GitHub: https://github.com/Oblivionsage/BinAnalyzer\n\n";

@@ -7,6 +7,15 @@
 
 namespace BinAnalyzer {
 
+enum class Architecture {
+    X86_32,
+    X86_64,
+    ARM_32,
+    ARM_64,
+    THUMB,      // ARM Thumb mode
+    AUTO        // Auto-detect
+};
+
 struct Instruction {
     uint64_t address;
     std::vector<uint8_t> bytes;
@@ -17,7 +26,7 @@ struct Instruction {
 
 class Disassembler {
 public:
-    explicit Disassembler(bool is_64bit = true);
+    explicit Disassembler(Architecture arch = Architecture::X86_64);
     ~Disassembler();
 
     // Disassemble binary code
@@ -26,13 +35,23 @@ public:
     // Disassemble single instruction
     bool disassemble_single(const uint8_t* code, size_t size, uint64_t address, Instruction& out);
 
-    // Set architecture mode
-    void set_64bit_mode(bool enable);
+    // Set architecture
+    void set_architecture(Architecture arch);
+    
+    // Get current architecture
+    Architecture get_architecture() const;
 
 private:
     void* handle;  // Capstone handle (opaque pointer)
-    bool is_64bit;
+    Architecture arch;
+    
+    bool initialize_engine();
+    void cleanup_engine();
 };
+
+// Helper functions
+std::string architecture_to_string(Architecture arch);
+Architecture string_to_architecture(const std::string& str);
 
 } // namespace BinAnalyzer
 

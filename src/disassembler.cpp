@@ -5,32 +5,76 @@
 
 namespace BinAnalyzer {
 
-Disassembler::Disassembler(bool is_64bit) : handle(nullptr), is_64bit(is_64bit) {
-    csh* cs_handle = new csh;
-    
-    cs_mode mode = is_64bit ? CS_MODE_64 : CS_MODE_32;
-    
-    if (cs_open(CS_ARCH_X86, mode, cs_handle) != CS_ERR_OK) {
-        std::cerr << "[!] Failed to initialize Capstone engine" << std::endl;
-        delete cs_handle;
-        cs_handle = nullptr;
-    }
-    
-    // Enable detail mode for more info
-    if (cs_handle && *cs_handle) {
-        cs_option(*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
-    }
-    
-    handle = cs_handle;
+Disassembler::Disassembler(Architecture arch) : handle(nullptr), arch(arch) {
+    initialize_engine();
 }
 
 Disassembler::~Disassembler() {
+    cleanup_engine();
+}
+
+bool Disassembler::initialize_engine() {
+    cleanup_engine();
+    
+    csh* cs_handle = new csh;
+    cs_arch cs_architecture;
+    cs_mode cs_mode_flags;
+    
+    // Map our architecture enum to Capstone
+    switch (arch) {
+        case Architecture::X86_32:
+            cs_architecture = CS_ARCH_X86;
+            cs_mode_flags = CS_MODE_32;
+            break;
+            
+        case Architecture::X86_64:
+            cs_architecture = CS_ARCH_X86;
+            cs_mode_flags = CS_MODE_64;
+            break;
+            
+        case Architecture::ARM_32:
+            cs_architecture = CS_ARCH_ARM;
+            cs_mode_flags = CS_MODE_ARM;
+            break;
+            
+        case Architecture::ARM_64:
+            cs_architecture = CS_ARCH_ARM64;
+            cs_mode_flags = CS_MODE_ARM;
+            break;
+            
+        case Architecture::THUMB:
+            cs_architecture = CS_ARCH_ARM;
+            cs_mode_flags = CS_MODE_THUMB;
+            break;
+            
+        default:
+            std::cerr << "[!] Invalid architecture" << std::endl;
+            delete cs_handle;
+            return false;
+    }
+    
+    if (cs_open(cs_architecture, cs_mode_flags, cs_handle) != CS_ERR_OK) {
+        std::cerr << "[!] Failed to initialize Capstone for architecture: " 
+                  << architecture_to_string(arch) << std::endl;
+        delete cs_handle;
+        return false;
+    }
+    
+    // Enable detail mode
+    cs_option(*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
+    
+    handle = cs_handle;
+    return true;
+}
+
+void Disassembler::cleanup_engine() {
     if (handle) {
         csh* cs_handle = static_cast<csh*>(handle);
         if (*cs_handle) {
             cs_close(cs_handle);
         }
         delete cs_handle;
+        handle = nullptr;
     }
 }
 
@@ -90,19 +134,42 @@ bool Disassembler::disassemble_single(const uint8_t* code, size_t size, uint64_t
     return false;
 }
 
-void Disassembler::set_64bit_mode(bool enable) {
-    if (!handle) return;
-    
-    is_64bit = enable;
-    
-    csh* cs_handle = static_cast<csh*>(handle);
-    if (*cs_handle) {
-        cs_close(cs_handle);
+void Disassembler::set_architecture(Architecture new_arch) {
+    if (arch != new_arch) {
+        arch = new_arch;
+        initialize_engine();
     }
+}
+
+Architecture Disassembler::get_architecture() const {
+    return arch;
+}
+
+std::string architecture_to_string(Architecture arch) {
+    switch (arch) {
+        case Architecture::X86_32:  return "x86-32";
+        case Architecture::X86_64:  return "x86-64";
+        case Architecture::ARM_32:  return "ARM";
+        case Architecture::ARM_64:  return "ARM64";
+        case Architecture::THUMB:   return "ARM Thumb";
+        case Architecture::AUTO:    return "Auto-detect";
+        default:                     return "Unknown";
+    }
+}
+
+Architecture string_to_architecture(const std::string& str) {
+    if (str == "x86" || str == "x86-32" || str == "i386") 
+        return Architecture::X86_32;
+    if (str == "x64" || str == "x86-64" || str == "amd64") 
+        return Architecture::X86_64;
+    if (str == "arm" || str == "arm32") 
+        return Architecture::ARM_32;
+    if (str == "arm64" || str == "aarch64") 
+        return Architecture::ARM_64;
+    if (str == "thumb") 
+        return Architecture::THUMB;
     
-    cs_mode mode = is_64bit ? CS_MODE_64 : CS_MODE_32;
-    cs_open(CS_ARCH_X86, mode, cs_handle);
-    cs_option(*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
+    return Architecture::AUTO;
 }
 
 } // namespace BinAnalyzer
