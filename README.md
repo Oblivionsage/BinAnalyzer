@@ -1,388 +1,347 @@
 # BinAnalyzer
 
-![Version](https://img.shields.io/badge/version-1.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
-![Build](https://github.com/Oblivionsage/BinAnalyzer/actions/workflows/c-cpp.yml/badge.svg)
-
-**Modern binary analysis tool for offensive security research and malware analysis**
-```
-Cross-platform | Fast | Modular | Open Source
-```
-
----
-
-##  Legal Disclaimer
-
-**For authorized security research and educational purposes only.**
-
-By using this tool, you agree to obtain proper authorization, comply with all laws, and accept full responsibility for your actions. Developers are not liable for misuse. Unauthorized use may result in criminal prosecution
-
----
-
-## Overview
-
-BinAnalyzer is a comprehensive binary analysis framework built in modern C++17. It combines static analysis, threat intelligence extraction, and offensive security research capabilities in a single, efficient tool
-
-**Key Capabilities:**
-
-- Static binary analysis with entropy detection
-- Import table threat assessment (100+ suspicious APIs)
-- Security mitigation analysis (ASLR, DEP, CFG, SEH)
-- Packer detection (UPX, Themida, VMProtect, etc.)
-- Shellcode pattern recognition
-- Network IOC extraction (IPs, domains, URLs)
-- Suspicious string categorization (crypto, anti-VM, persistence)
-- PE/ELF format parsing
-
----
-
-## Quick Start
-
-### Installation
-
-**Prerequisites:** CMake 3.15+, C++17 compiler, OpenSSL
-```bash
-# Debian/Ubuntu/Kali
-sudo apt install build-essential cmake libssl-dev
-
-# macOS
-brew install cmake openssl
-
-# Clone and build
-git clone https://github.com/Oblivionsage/BinAnalyzer.git
-cd BinAnalyzer && mkdir build && cd build
-cmake .. && make
-
-# Run
-./binanalyzer --help
-```
-
-### Basic Usage
-```bash
-# Standard analysis
-./binanalyzer binary.exe
-
-# Red Team mode (full offensive analysis)
-./binanalyzer --red-team malware.exe
-
-# Extract strings only
-./binanalyzer --strings-only binary.dll
-
-# Custom offset/length
-./binanalyzer --offset 0x1000 --length 512 file.bin
-```
-
----
+Binary analysis toolkit for offensive security research.
 
 ## Features
 
-### Phase 1: Core Analysis (done)
+- PE/ELF file analysis
+- Import table analysis with threat categorization
+- Security feature detection (ASLR, DEP, CFG, SafeSEH)
+- Packer detection (UPX, Themida, VMProtect, ASPack, etc.)
+- Shellcode pattern recognition
+- Network IOC extraction (IPs, domains, URLs, emails)
+- Suspicious string analysis
+- Entropy calculation and byte statistics
+- Code cave detection
+- Hex dump with colored output
 
-**Hex Viewer**
-- Intelligent color-coded byte display
-- Configurable offset and length
-- ASCII decoding alongside hex
+## Installation
 
-**File Information**
-- MD5 and SHA256 hashing
-- File size and type detection
-- Byte statistics and entropy calculation
-
-**PE Parser**
-- Architecture detection (x86/x64)
-- Entry point and image base
-- Section enumeration
-- Compilation timestamp
-
-**String Extraction**
-- ASCII string extraction
-- Configurable minimum length
-- Context-aware filtering
-
-### Phase 2: Offensive Security Analysis (done)
-
-**Import Table Threat Assessment**
-- 100+ suspicious API database
-- 12 threat categories (Process Injection, Memory Manipulation, Anti-Debug, etc.)
-- Severity scoring: INFO → LOW → MEDIUM → HIGH → CRITICAL
-- Pattern matching with confidence levels
-
-**Security Mitigations Check**
-- ASLR (Address Space Layout Randomization)
-- DEP/NX (Data Execution Prevention)
-- CFG (Control Flow Guard)
-- SEH (Safe Exception Handlers)
-- High Entropy ASLR (64-bit)
-- Security score calculation (0-100)
-- RWX section detection (critical vulnerability indicator)
-
-**Packer Detection**
-- Signature-based detection: UPX, Themida, VMProtect, ASPack, PECompact, MPRESS
-- Entropy analysis (>7.0 = suspicious)
-- Entry point anomaly detection
-- Import count heuristics
-- Confidence scoring
-
-**Shellcode Pattern Recognition**
-- NOP sled detection (20+ consecutive 0x90)
-- GetPC techniques (CALL/POP, FNSTENV)
-- Egg hunter patterns
-- Metasploit encoder stubs
-- WinExec signatures
-
-**Network IOC Extraction**
-- IPv4 address extraction
-- Domain identification (14 TLDs)
-- URL parsing (HTTP/HTTPS/FTP)
-- Email address validation
-- Context extraction for each IOC
-
-**Suspicious String Analysis**
-- 60+ keyword database across 10 categories:
-  - Cryptography (AES, RC4, XOR)
-  - Anti-VM (VMware, VirtualBox, QEMU)
-  - Anti-Debug (IsDebuggerPresent, CheckRemoteDebugger)
-  - Persistence (Registry Run keys, scheduled tasks)
-  - Sandbox Detection (Cuckoo, joe.exe)
-  - Reconnaissance (ipconfig, whoami, systeminfo)
-  - Lateral Movement (psexec, WMI)
-  - Data Exfiltration
-  - Malware APIs (CreateRemoteThread, VirtualAllocEx)
-  - Debugging Tools (OllyDbg, IDA, x64dbg)
-- Suspicion scoring (0.0-1.0)
-- Category-based color coding
-
-**Red Team Analysis Mode**
-
-Six-stage comprehensive analysis pipeline:
-1. Import Table Analysis
-2. Security Mitigations Assessment
-3. Packer Detection
-4. Shellcode Pattern Scanning
-5. Network IOC Extraction
-6. Suspicious String Categorization
-
-Final summary with aggregated threat intelligence.
-
----
-
-## Command-Line Options
-```
-Usage: binanalyzer [OPTIONS] <file>
-
-Analysis Options:
-  --red-team, -r          Enable Red Team analysis mode (6-stage offensive analysis)
-  --strings-only          Extract and display strings only
-
-Display Options:
-  --offset, -o <hex>      Start hex dump at offset (default: 0x0)
-  --length, -l <num>      Number of bytes to display (default: 256)
-  --min-string, -m <num>  Minimum string length (default: 5)
-  --no-color              Disable colored output
-
-Information:
-  --help, -h              Display this help message
-  --version, -v           Show version information
+```bash
+git clone https://github.com/nullprophet/BinAnalyzer.git
+cd BinAnalyzer
+mkdir build && cd build
+cmake ..
+make
 ```
 
----
+**Requirements:**
+
+- C++17 compiler
+- CMake 3.15+
+- OpenSSL development libraries
+
+## Usage
+```bash
+# Red team analysis mode
+./binanalyzer --red-team <file>
+
+# Standard analysis
+./binanalyzer <file>
+
+# Extract strings only
+./binanalyzer --strings <file>
+
+# Hex dump with custom offset/length
+./binanalyzer <file> --offset 0x1000 --length 512
+```
+
+## Output
+
+Minimal terminal output with colored hex addresses and threat indicators.
+
+## Architecture
+```
+src/
+├── main.cpp                  # Entry point
+├── file_handler.cpp          # File I/O operations
+├── pe_parser.cpp             # PE format parsing
+├── import_analyzer.cpp       # Import table analysis
+├── security_analyzer.cpp     # Security features detection
+├── packer_detector.cpp       # Packer identification
+├── shellcode_detector.cpp    # Shellcode pattern matching
+├── ioc_extractor.cpp         # Network IOC extraction
+├── string_analyzer.cpp       # Suspicious string detection
+└── advanced_analyzer.cpp     # Analysis orchestrator
+```
 
 ## Roadmap
 
-### Phase 3: Advanced Static Analysis
+### Phase 1: Advanced Binary Analysis
+- [ ] **Disassembly Engine Integration**
+  - x86/x64 instruction disassembly
+  - ARM/ARM64 support
+  - Control flow graph generation
+  - Basic block identification
+  - Function boundary detection
+  - Cross-reference analysis
 
-**Export Table Analysis**
-- Exported function enumeration
-- Ordinal-based exports
-- Forwarded exports detection
-- DLL hijacking vulnerability assessment
+- [ ] **Advanced Packer Detection**
+  - Custom packer signatures database
+  - Polymorphic packer detection
+  - Runtime packer identification
+  - Entropy-based packing analysis
+  - Section characteristic analysis
+  - Import reconstruction for packed files
 
-**Section Analysis**
-- Detailed section characteristics
-- Virtual vs raw size discrepancies
-- Suspicious section names
-- Section entropy mapping
+- [ ] **Anti-Analysis Technique Detection**
+  - Anti-debugging techniques (hardware breakpoints, timing checks, exception handlers)
+  - Anti-VM detection (CPUID checks, registry keys, process artifacts)
+  - Anti-sandbox techniques (sleep acceleration, mouse/keyboard checks)
+  - Environment fingerprinting detection
+  - Code obfuscation identification (control flow flattening, opaque predicates)
 
-**Resource Analysis**
-- Icon, dialog, and image extraction
-- Hidden executables in resources
-- Dropper detection
-- Resource language analysis
+### Phase 2: Malware Analysis Capabilities
+- [ ] **Behavioral Indicators**
+  - API call sequence analysis
+  - Suspicious API combination detection
+  - Thread injection technique identification
+  - Process hollowing pattern detection
+  - Reflective DLL loading indicators
+  - Hook detection capabilities
 
-**TLS Callback Detection**
-- Thread Local Storage callback enumeration
-- Pre-main execution detection
-- Anti-analysis technique identification
+- [ ] **Cryptography Analysis**
+  - Crypto constant detection (AES S-boxes, DES P-boxes, RSA exponents)
+  - Custom encryption algorithm identification
+  - Key schedule detection
+  - Cipher mode identification
+  - Hash function constant detection
 
-**Rich Header Analysis**
-- Compiler toolchain detection
-- Build environment fingerprinting
-- Authenticity verification
+- [ ] **String Analysis Enhancement**
+  - Unicode string extraction
+  - Base64/Base32 encoded string detection
+  - XOR-encoded string decryption attempts
+  - Stack string reconstruction
+  - Encrypted string identification
 
-**Code Cave Detection**
-- Null byte sequence identification
-- Injection point enumeration
-- Size and location mapping
+### Phase 3: Exploit Development Support
+- [ ] **ROP Gadget Finder**
+  - Comprehensive ROP chain search
+  - JOP gadget identification
+  - Syscall gadget finder
+  - Bad character filtering
+  - Gadget quality scoring
+  - Automatic ROP chain generation
 
-### Phase 4: Dynamic Capabilities
+- [ ] **Vulnerability Pattern Detection**
+  - Stack buffer overflow indicators
+  - Integer overflow patterns
+  - Format string vulnerability detection
+  - Use-after-free pattern identification
+  - Race condition indicators
+  - Memory corruption patterns
 
-**Disassembly Engine**
-- Capstone integration for x86/x64
-- Function boundary detection
-- Call graph generation
-- Control flow analysis
+- [ ] **Exploit Mitigation Bypass**
+  - ASLR bypass technique identification
+  - DEP bypass gadget search
+  - CFG bypass pattern detection
+  - Stack canary bypass opportunities
+  - SEH overwrite chain analysis
 
-**API Call Tracing**
-- Imported function resolution
-- Indirect call detection
-- API hooking identification
+### Phase 4: Advanced Code Analysis
+- [ ] **Static Code Analysis**
+  - Taint analysis implementation
+  - Data flow analysis
+  - Use-def chain analysis
+  - Reaching definition analysis
+  - Live variable analysis
+  - Constant propagation
 
-**Cryptographic Analysis**
-- Constant detection (crypto keys, IVs)
-- Algorithm identification
-- Base64/XOR pattern matching
+- [ ] **Symbolic Execution**
+  - Path constraint collection
+  - SMT solver integration (Z3)
+  - Automated test case generation
+  - Branch coverage analysis
+  - Concolic execution support
 
-### Phase 5: Intelligence & Automation
+- [ ] **Binary Diffing**
+  - Function-level binary comparison
+  - Basic block similarity analysis
+  - Patch analysis automation
+  - Security update impact assessment
+  - 1-day exploit development support
 
-**YARA Integration**
-- Custom rule engine
-- Malware family identification
-- Signature matching
-- Rule compilation
+### Phase 5: Network & Communication Analysis
+- [ ] **Network Protocol Analysis**
+  - C2 protocol pattern detection
+  - Custom protocol identification
+  - Domain generation algorithm (DGA) detection
+  - Beacon interval analysis
+  - Encrypted channel identification
 
-**VirusTotal Integration**
-- Hash-based lookups
-- Behavioral analysis retrieval
-- Detection ratio display
-- Community comments
+- [ ] **Hardcoded Credentials**
+  - API key detection
+  - Database connection string extraction
+  - Authentication token identification
+  - Private key detection
+  - Certificate extraction
 
-**ImpHash Calculation**
-- Import hash generation
-- Malware family correlation
-- Database integration
+### Phase 6: Sandbox & Dynamic Analysis Integration
+- [ ] **Dynamic Analysis Preparation**
+  - Automated unpacking preparation
+  - Dynamic library dependency resolution
+  - Environment setup suggestions
+  - Monitoring point identification
+  - Breakpoint recommendation
 
-**Sandbox Integration**
-- Cuckoo Sandbox API
-- Any.run integration
-- Joe Sandbox support
+- [ ] **Emulation Support**
+  - CPU emulation (Unicorn integration)
+  - API emulation for common functions
+  - Partial execution support
+  - State snapshotting
+  - Memory dumping capabilities
 
-### Phase 6: Interactive Features
+### Phase 7: Threat Intelligence Integration
+- [ ] **Hash Database Integration**
+  - VirusTotal API integration
+  - MalwareBazaar lookup
+  - Hybrid Analysis submission
+  - YARA rule scanning
+  - Custom hash database support
 
-**TUI (Text User Interface)**
-- ncurses-based interface
-- Keyboard navigation
-- Split-pane view (hex + disassembly)
-- Bookmarks and annotations
+- [ ] **IOC Enrichment**
+  - IP/Domain reputation lookup
+  - ASN information retrieval
+  - Geolocation data
+  - Historical DNS records
+  - WHOIS information
 
-**Batch Processing**
-- Directory scanning
-- Recursive analysis
-- Report generation (JSON, XML, HTML)
-- Parallel processing
+- [ ] **Signature Generation**
+  - YARA rule auto-generation
+  - Snort/Suricata signature creation
+  - ClamAV signature generation
+  - Custom signature format support
 
-**Plugin System**
-- Lua/Python scripting interface
-- Custom analyzer plugins
-- Output format plugins
-- Extensible architecture
+### Phase 8: Forensics & Investigation
+- [ ] **Timeline Analysis**
+  - PE timestamp verification
+  - Certificate validity period analysis
+  - Compilation time extraction
+  - Resource timestamp analysis
 
-### Phase 7: Specialized Formats
+- [ ] **Attribution Indicators**
+  - PDB path extraction and analysis
+  - Compiler signature detection
+  - Programming language identification
+  - Framework/library detection
+  - Code reuse analysis
 
-**ELF Analysis**
-- Full ELF header parsing
-- Program header enumeration
-- Section header analysis
-- Symbol table extraction
-- Dynamic linking analysis
+- [ ] **Memory Forensics**
+  - Memory dump analysis
+  - Process injection artifact detection
+  - Heap/stack analysis
+  - Malicious driver detection
 
-**Mach-O Support**
-- macOS binary parsing
-- Universal binary handling
-- Code signing verification
+### Phase 9: Automated Exploit Generation
+- [ ] **Fuzzing Integration**
+  - Input generation for target analysis
+  - Crash triage automation
+  - Exploitability assessment
+  - AFL/LibFuzzer integration
+  - Coverage-guided fuzzing support
 
-**PE64 Enhancements**
-- Exception handler analysis
-- Load config directory
-- Delay-load imports
+- [ ] **Automatic Exploit Development**
+  - Vulnerability to exploit automation
+  - Shellcode generation
+  - Exploit reliability improvement
+  - Exploit chain construction
+  - Target-specific payload generation
 
-**Android APK**
-- DEX file parsing
-- Manifest analysis
-- Native library extraction
+### Phase 10: Reporting & Visualization
+- [ ] **Report Generation**
+  - PDF report generation
+  - HTML interactive reports
+  - JSON output for automation
+  - Markdown documentation
+  - Executive summary generation
 
-### Phase 8: Advanced Threat Detection
+- [ ] **Visual Analysis**
+  - Control flow graph visualization
+  - Call graph generation
+  - Import/export dependency graphs
+  - Entropy visualization
+  - Memory layout visualization
 
-**Behavioral Indicators**
-- Process hollowing detection
-- DLL injection patterns
-- Reflective loading signatures
-- Heaven's Gate detection (WoW64)
+### Phase 11: Platform Extensions
+- [ ] **Mobile Binary Analysis**
+  - Android APK analysis (DEX, native libraries)
+  - iOS binary analysis (Mach-O format)
+  - Mobile malware detection
+  - Mobile packer detection
 
-**Evasion Techniques**
-- Time-based delays
-- Environment checks
-- Debugger detection methods
-- VM fingerprinting
+- [ ] **Firmware Analysis**
+  - Firmware unpacking
+  - Embedded system binary analysis
+  - IoT device firmware analysis
+  - Bootloader analysis
 
-**Ransomware Indicators**
-- File extension targeting
-- Encryption routine patterns
-- Ransom note strings
-- Bitcoin address extraction
+- [ ] **Scripting Language Analysis**
+  - PowerShell script analysis
+  - Python bytecode analysis
+  - JavaScript/VBScript detection
+  - Macro analysis (Office documents)
 
-**APT Techniques**
-- Living-off-the-land binaries (LOLBins)
-- Fileless malware indicators
-- Command-and-control patterns
-- Lateral movement artifacts
+### Phase 12: Machine Learning Integration
+- [ ] **ML-Based Detection**
+  - Malware family classification
+  - Packer identification using ML
+  - Anomaly detection
+  - Behavioral clustering
+  - Zero-day malware detection
 
----
+- [ ] **Neural Network Analysis**
+  - Deep learning-based code analysis
+  - Automatic feature extraction
+  - Similarity learning
+  - Adversarial sample detection
 
-## Technical Details
+### Phase 13: Collaboration & Automation
+- [ ] **API & CLI Enhancement**
+  - RESTful API server
+  - Batch processing support
+  - CI/CD integration
+  - Docker containerization
+  - Distributed analysis support
 
-**Architecture:** Modular C++17 design with header-only components
+- [ ] **Plugin System**
+  - Custom analyzer plugins
+  - Third-party tool integration
+  - Signature database plugins
+  - Output format plugins
 
-**Performance:** Optimized for large files (2MB scan limit, streaming processing)
+### Phase 14: Advanced Stealth Analysis
+- [ ] **Rootkit Detection**
+  - SSDT hook detection
+  - IDT/GDT modification detection
+  - Hidden process/driver detection
+  - Kernel object manipulation detection
 
-**Dependencies:** OpenSSL (hashing), standard C++ library
+- [ ] **Bootkit Analysis**
+  - MBR/VBR analysis
+  - UEFI firmware analysis
+  - Secure boot bypass detection
+  - Boot sector analysis
 
-**Platform Support:** Linux (primary), macOS, Windows (via MinGW/MSVC)
-
-**Build System:** CMake 3.15+ with cross-platform configuration
-
----
+### Phase 15: Exploit Kit Analysis
+- [ ] **Exploit Kit Detection**
+  - Landing page analysis
+  - Exploit payload extraction
+  - Shellcode decode automation
+  - Drive-by download chain analysis
+  - Browser exploit detection
 
 ## Contributing
 
-**Bug Reports:** Open an issue with reproduction steps and system info
-
-**Feature Requests:** Describe use case and implementation approach
-
-**Pull Requests:** Fork, create feature branch, submit PR with tests
-
-**Code Style:** C++17 standards, meaningful names, documented logic
-
----
+Security researchers and offensive tool developers welcome.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file
+MIT License
 
-Copyright (c) 2025 Oblivionsage
+## Disclaimer
 
----
+For authorized security research and penetration testing only. Users are responsible for compliance with applicable laws.
 
-## Acknowledgments
+## Author
 
-Inspired by: PEiD, Detect It Easy, PEStudio, CFF Explorer, IDA Pro
-
-Built with: OpenSSL (cryptography), modern C++ standard library
-
-Community: Thanks to reverse engineering and infosec communities
-
----
-
-**GitHub:** [Oblivionsage/BinAnalyzer](https://github.com/Oblivionsage/BinAnalyzer)
-
-**Developer:** [@Oblivionsage](https://github.com/Oblivionsage)
+Oblivionsage
