@@ -26,7 +26,7 @@ Cross-platform | Fast | Modular | Open Source
 
 ## Installation
 ```bash
-git clone https://github.com/nullprophet/BinAnalyzer.git
+git clone https://github.com/Oblivionsage/BinAnalyzer.git
 cd BinAnalyzer
 mkdir build && cd build
 cmake ..
