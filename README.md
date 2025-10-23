@@ -1,347 +1,388 @@
 # BinAnalyzer
 
-<div align="center">
+![Version](https://img.shields.io/badge/version-1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
+![Build](https://github.com/Oblivionsage/BinAnalyzer/actions/workflows/c-cpp.yml/badge.svg)
 
-![BinAnalyzer Logo](https://img.shields.io/badge/BinAnalyzer-v1.0-blue?style=for-the-badge)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![C++17](https://img.shields.io/badge/C++-17-00599C?style=for-the-badge&logo=c%2B%2B)](https://en.cppreference.com/w/cpp/17)
-[![CMake](https://img.shields.io/badge/CMake-3.15+-064F8C?style=for-the-badge&logo=cmake)](https://cmake.org/)
-![Build Status](https://github.com/Oblivionsage/BinAnalyzer/actions/workflows/c-cpp.yml/badge.svg)
+**Modern binary analysis tool for offensive security research and malware analysis.**
+```
+Cross-platform | Fast | Modular | Open Source
+```
 
-**A modern, terminal-based binary analysis tool for reverse engineers and security researchers**
+---
 
-[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Roadmap](#roadmap) • [Contributing](#contributing)
+##  Legal Disclaimer
 
-</div>
+**For authorized security research and educational purposes only.**
 
+By using this tool, you agree to obtain proper authorization, comply with all laws, and accept full responsibility for your actions. Developers are not liable for misuse. Unauthorized use may result in criminal prosecution.
 
 ---
 
 ## Overview
 
-BinAnalyzer is a powerful yet lightweight binary analysis tool written in modern C++17. It provides an intuitive, colorized terminal interface for analyzing executable files, extracting information, and performing initial reconnaissance on unknown binaries.
+BinAnalyzer is a comprehensive binary analysis framework built in modern C++17. It combines static analysis, threat intelligence extraction, and offensive security research capabilities in a single, efficient tool.
 
-### Why BinAnalyzer?
+**Key Capabilities:**
 
-- **Beautiful Output**: Intelligent color-coding makes hex analysis easier on the eyes
-- **Fast & Lightweight**: Written in C++ for maximum performance
-- **Modular Design**: Clean architecture makes it easy to extend
-- **Cross-Platform**: Works on Linux, macOS, and Windows
-- **Open Source**: MIT licensed, contributions welcome
+- Static binary analysis with entropy detection
+- Import table threat assessment (100+ suspicious APIs)
+- Security mitigation analysis (ASLR, DEP, CFG, SEH)
+- Packer detection (UPX, Themida, VMProtect, etc.)
+- Shellcode pattern recognition
+- Network IOC extraction (IPs, domains, URLs)
+- Suspicious string categorization (crypto, anti-VM, persistence)
+- PE/ELF format parsing
+
+---
+
+## Quick Start
+
+### Installation
+
+**Prerequisites:** CMake 3.15+, C++17 compiler, OpenSSL
+```bash
+# Debian/Ubuntu/Kali
+sudo apt install build-essential cmake libssl-dev
+
+# macOS
+brew install cmake openssl
+
+# Clone and build
+git clone https://github.com/Oblivionsage/BinAnalyzer.git
+cd BinAnalyzer && mkdir build && cd build
+cmake .. && make
+
+# Run
+./binanalyzer --help
+```
+
+### Basic Usage
+```bash
+# Standard analysis
+./binanalyzer binary.exe
+
+# Red Team mode (full offensive analysis)
+./binanalyzer --red-team malware.exe
+
+# Extract strings only
+./binanalyzer --strings-only binary.dll
+
+# Custom offset/length
+./binanalyzer --offset 0x1000 --length 512 file.bin
+```
 
 ---
 
 ## Features
 
-### Phase 1 (Complete - v1.0) 
+### Phase 1: Core Analysis (done)
 
-#### Colorized Hex Viewer
-- Intelligent byte highlighting based on content type
-  - **Cyan**: PE/ELF magic bytes and signatures
-  - **Green**: Printable ASCII characters
-  - **Yellow**: Control characters
-  - **Blue**: Extended ASCII
-  - **Gray**: NULL bytes
-- Professional box-drawing interface
-- Configurable display offset and length
+**Hex Viewer**
+- Intelligent color-coded byte display
+- Configurable offset and length
+- ASCII decoding alongside hex
 
-#### File Information & Analysis
-- MD5 hash calculation
-- SHA256 hash calculation
-- File size with human-readable format
-- Automatic file type detection (PE/ELF)
-- **Byte statistics** with percentage breakdown
-- **Entropy calculation** for packed/encrypted binary detection
+**File Information**
+- MD5 and SHA256 hashing
+- File size and type detection
+- Byte statistics and entropy calculation
 
-#### PE Header Parser
+**PE Parser**
 - Architecture detection (x86/x64)
-- Subsystem identification (Console/GUI)
-- Entry point address
-- Image base address
-- Section count
+- Entry point and image base
+- Section enumeration
 - Compilation timestamp
 
-#### String Extraction
-- Configurable minimum string length
-- Filters printable ASCII strings
-- Shows first 20 strings with count of remaining
-- Strings-only mode for quick extraction
+**String Extraction**
+- ASCII string extraction
+- Configurable minimum length
+- Context-aware filtering
 
-#### Command-Line Interface
-- `--help` / `-h` - Display help message
-- `--version` / `-v` - Show version information
-- `--offset` / `-o` - Start hex dump at specific offset
-- `--length` / `-l` - Control number of bytes to display
-- `--min-string` / `-m` - Set minimum string length
-- `--no-color` - Disable colored output (useful for piping)
-- `--strings-only` - Extract and display only strings
+### Phase 2: Offensive Security Analysis (done)
 
-### Phase 2 (Planned)
+**Import Table Threat Assessment**
+- 100+ suspicious API database
+- 12 threat categories (Process Injection, Memory Manipulation, Anti-Debug, etc.)
+- Severity scoring: INFO → LOW → MEDIUM → HIGH → CRITICAL
+- Pattern matching with confidence levels
 
+**Security Mitigations Check**
+- ASLR (Address Space Layout Randomization)
+- DEP/NX (Data Execution Prevention)
+- CFG (Control Flow Guard)
+- SEH (Safe Exception Handlers)
+- High Entropy ASLR (64-bit)
+- Security score calculation (0-100)
+- RWX section detection (critical vulnerability indicator)
 
-#### Import Table Analysis
+**Packer Detection**
+- Signature-based detection: UPX, Themida, VMProtect, ASPack, PECompact, MPRESS
+- Entropy analysis (>7.0 = suspicious)
+- Entry point anomaly detection
+- Import count heuristics
+- Confidence scoring
 
-- **100+ Suspicious APIs catalogued** across 12 categories
-- **Threat level scoring:** INFO → LOW → MEDIUM → HIGH → CRITICAL
-- **Intelligent categorization:**
-  
-  -  Process Injection (CreateRemoteThread, WriteProcessMemory, etc.)
-  -  Memory Manipulation (VirtualAlloc, VirtualProtect, etc.)
-  -  Anti-Debug (IsDebuggerPresent, CheckRemoteDebuggerPresent, etc.)
-  -  Anti-VM Detection
-  -  Network Operations (WinInet, WinSock)
-  -  File Operations
-  -  Registry Operations
-  -  Cryptography APIs
-  -  Process Manipulation
-  -  Privilege Escalation
-  -  Evasion Techniques
-  -  Information Gathering
+**Shellcode Pattern Recognition**
+- NOP sled detection (20+ consecutive 0x90)
+- GetPC techniques (CALL/POP, FNSTENV)
+- Egg hunter patterns
+- Metasploit encoder stubs
+- WinExec signatures
 
-#### Performance & Safety
-- Platform-aware analysis (PE-only to avoid false positives)
-- Optimized scanning (first 2MB for large files)
-- Progress indicators for slow operations
-- Duplicate detection and limiting (max 50 displayed)
+**Network IOC Extraction**
+- IPv4 address extraction
+- Domain identification (14 TLDs)
+- URL parsing (HTTP/HTTPS/FTP)
+- Email address validation
+- Context extraction for each IOC
 
-#### Red Team CLI Mode
-```bash
-./binanalyzer --red-team suspicious.exe
-./binanalyzer -r malware.dll
-```
-### Phase 2 (Partial - Import Analysis Complete)
+**Suspicious String Analysis**
+- 60+ keyword database across 10 categories:
+  - Cryptography (AES, RC4, XOR)
+  - Anti-VM (VMware, VirtualBox, QEMU)
+  - Anti-Debug (IsDebuggerPresent, CheckRemoteDebugger)
+  - Persistence (Registry Run keys, scheduled tasks)
+  - Sandbox Detection (Cuckoo, joe.exe)
+  - Reconnaissance (ipconfig, whoami, systeminfo)
+  - Lateral Movement (psexec, WMI)
+  - Data Exfiltration
+  - Malware APIs (CreateRemoteThread, VirtualAllocEx)
+  - Debugging Tools (OllyDbg, IDA, x64dbg)
+- Suspicion scoring (0.0-1.0)
+- Category-based color coding
 
-- ELF header parser (Linux binaries)
-- Import/Export table analysis
-- Section/Segment detailed analysis
-- Entropy calculation (detect packed/encrypted sections)
-- Interactive navigation mode
+**Red Team Analysis Mode**
 
+Six-stage comprehensive analysis pipeline:
+1. Import Table Analysis
+2. Security Mitigations Assessment
+3. Packer Detection
+4. Shellcode Pattern Scanning
+5. Network IOC Extraction
+6. Suspicious String Categorization
 
-### Phase 3 (Future)
-
-- Pattern matching (YARA-like rules)
-- Disassembly support (Capstone integration)
-- Dependency graph visualization
-- Plugin system for extensibility
-
----
-
-## Installation
-
-### Prerequisites
-
-#### Debian/Ubuntu/Kali
-```bash
-sudo apt-get update
-sudo apt-get install build-essential cmake libssl-dev git
-```
-
-#### Fedora/RHEL
-```bash
-sudo dnf install gcc-c++ cmake openssl-devel git
-```
-
-#### macOS
-```bash
-brew install cmake openssl git
-```
-
-### Build from Source
-```bash
-# Clone the repository
-git clone https://github.com/Oblivionsage/BinAnalyzer.git
-cd BinAnalyzer
-
-# Create build directory
-mkdir build && cd build
-
-# Configure and build
-cmake ..
-make
-
-# Optional: Install system-wide
-sudo make install
-```
-
-### Verify Installation
-```bash
-./binanalyzer --version
-```
+Final summary with aggregated threat intelligence.
 
 ---
 
-### Examples
-
-#### Basic analysis
-```bash
-./binanalyzer /bin/ls
+## Command-Line Options
 ```
+Usage: binanalyzer [OPTIONS] <file>
 
-#### Analyze from specific offset
-```bash
-./binanalyzer --offset 0x1000 --length 512 malware.exe
+Analysis Options:
+  --red-team, -r          Enable Red Team analysis mode (6-stage offensive analysis)
+  --strings-only          Extract and display strings only
+
+Display Options:
+  --offset, -o <hex>      Start hex dump at offset (default: 0x0)
+  --length, -l <num>      Number of bytes to display (default: 256)
+  --min-string, -m <num>  Minimum string length (default: 5)
+  --no-color              Disable colored output
+
+Information:
+  --help, -h              Display this help message
+  --version, -v           Show version information
 ```
-
-#### Extract strings with minimum length
-```bash
-./binanalyzer --strings-only --min-string 10 binary.dll
-```
-
-#### Disable colors for text output
-```bash
-./binanalyzer --no-color sample.bin > analysis.txt
-```
-
-#### Get help and version
-```bash
-./binanalyzer --help
-./binanalyzer --version
-```
-
----
-
-## Architecture
-
-### Project Structure
-```
-BinAnalyzer/
-├── include/              # Header files
-│   ├── file_handler.hpp    # File I/O operations
-│   ├── hash_calculator.hpp # MD5/SHA256 calculation
-│   ├── hex_viewer.hpp      # Terminal UI and hex display
-│   └── pe_parser.hpp       # PE format parsing
-├── src/                  # Implementation files
-│   ├── file_handler.cpp
-│   ├── hash_calculator.cpp
-│   ├── hex_viewer.cpp
-│   ├── pe_parser.cpp
-│   └── main.cpp           # Entry point
-├── tests/                # Test files and samples
-├── CMakeLists.txt        # Build configuration
-└── README.md
-```
-
-### Design Principles
-
-- **Modularity**: Each component is independent and reusable
-- **Performance**: Efficient file handling and minimal memory footprint
-- **Extensibility**: Easy to add new parsers and analyzers
-- **Clean Code**: Following modern C++ best practices
 
 ---
 
 ## Roadmap
 
-### Version 1.1 (Next Release)
-- [ ] ELF header parser
-- [ ] Import/Export table viewer
-- [ ] Enhanced string extraction (Unicode support)
-- [ ] Configuration file support
+### Phase 3: Advanced Static Analysis
 
-### Version 1.2
-- [ ] Entropy analysis and visualization
-- [ ] Section-by-section analysis
-- [ ] Batch file processing
-- [ ] JSON output format
+**Export Table Analysis**
+- Exported function enumeration
+- Ordinal-based exports
+- Forwarded exports detection
+- DLL hijacking vulnerability assessment
 
-### Version 2.0
-- [ ] Interactive TUI mode
-- [ ] Disassembly integration
-- [ ] Pattern matching engine
-- [ ] Plugin API
+**Section Analysis**
+- Detailed section characteristics
+- Virtual vs raw size discrepancies
+- Suspicious section names
+- Section entropy mapping
 
-See [Issues](https://github.com/Oblivionsage/BinAnalyzer/issues) for detailed feature requests and bug reports.
+**Resource Analysis**
+- Icon, dialog, and image extraction
+- Hidden executables in resources
+- Dropper detection
+- Resource language analysis
+
+**TLS Callback Detection**
+- Thread Local Storage callback enumeration
+- Pre-main execution detection
+- Anti-analysis technique identification
+
+**Rich Header Analysis**
+- Compiler toolchain detection
+- Build environment fingerprinting
+- Authenticity verification
+
+**Code Cave Detection**
+- Null byte sequence identification
+- Injection point enumeration
+- Size and location mapping
+
+### Phase 4: Dynamic Capabilities
+
+**Disassembly Engine**
+- Capstone integration for x86/x64
+- Function boundary detection
+- Call graph generation
+- Control flow analysis
+
+**API Call Tracing**
+- Imported function resolution
+- Indirect call detection
+- API hooking identification
+
+**Cryptographic Analysis**
+- Constant detection (crypto keys, IVs)
+- Algorithm identification
+- Base64/XOR pattern matching
+
+### Phase 5: Intelligence & Automation
+
+**YARA Integration**
+- Custom rule engine
+- Malware family identification
+- Signature matching
+- Rule compilation
+
+**VirusTotal Integration**
+- Hash-based lookups
+- Behavioral analysis retrieval
+- Detection ratio display
+- Community comments
+
+**ImpHash Calculation**
+- Import hash generation
+- Malware family correlation
+- Database integration
+
+**Sandbox Integration**
+- Cuckoo Sandbox API
+- Any.run integration
+- Joe Sandbox support
+
+### Phase 6: Interactive Features
+
+**TUI (Text User Interface)**
+- ncurses-based interface
+- Keyboard navigation
+- Split-pane view (hex + disassembly)
+- Bookmarks and annotations
+
+**Batch Processing**
+- Directory scanning
+- Recursive analysis
+- Report generation (JSON, XML, HTML)
+- Parallel processing
+
+**Plugin System**
+- Lua/Python scripting interface
+- Custom analyzer plugins
+- Output format plugins
+- Extensible architecture
+
+### Phase 7: Specialized Formats
+
+**ELF Analysis**
+- Full ELF header parsing
+- Program header enumeration
+- Section header analysis
+- Symbol table extraction
+- Dynamic linking analysis
+
+**Mach-O Support**
+- macOS binary parsing
+- Universal binary handling
+- Code signing verification
+
+**PE64 Enhancements**
+- Exception handler analysis
+- Load config directory
+- Delay-load imports
+
+**Android APK**
+- DEX file parsing
+- Manifest analysis
+- Native library extraction
+
+### Phase 8: Advanced Threat Detection
+
+**Behavioral Indicators**
+- Process hollowing detection
+- DLL injection patterns
+- Reflective loading signatures
+- Heaven's Gate detection (WoW64)
+
+**Evasion Techniques**
+- Time-based delays
+- Environment checks
+- Debugger detection methods
+- VM fingerprinting
+
+**Ransomware Indicators**
+- File extension targeting
+- Encryption routine patterns
+- Ransom note strings
+- Bitcoin address extraction
+
+**APT Techniques**
+- Living-off-the-land binaries (LOLBins)
+- Fileless malware indicators
+- Command-and-control patterns
+- Lateral movement artifacts
 
 ---
 
-## Legal Disclaimer
+## Technical Details
 
-**This tool is for authorized security research and educational purposes only.**
+**Architecture:** Modular C++17 design with header-only components
 
-### Authorized Use
+**Performance:** Optimized for large files (2MB scan limit, streaming processing)
 
-- Legitimate malware analysis
-- Security research with proper authorization
-- Educational and academic purposes
-- Legal penetration testing
-- Defensive security operations
+**Dependencies:** OpenSSL (hashing), standard C++ library
 
-### User Responsibility
+**Platform Support:** Linux (primary), macOS, Windows (via MinGW/MSVC)
 
-By using this tool, you agree to:
-- Obtain proper authorization before analyzing any binary
-- Comply with all applicable laws and regulations
-- Use this tool ethically and responsibly
-- Accept full responsibility for your actions
+**Build System:** CMake 3.15+ with cross-platform configuration
 
-### Developer Disclaimer
-
-The developers are NOT responsible for misuse of this tool. No warranty is provided. Users assume all liability for their actions.
-
-**Misuse may result in severe legal consequences including criminal prosecution.**
+---
 
 ## Contributing
 
-Contributions are welcome! Here's how you can help:
+**Bug Reports:** Open an issue with reproduction steps and system info
 
-### Reporting Bugs
-Open an issue with:
-- Description of the bug
-- Steps to reproduce
-- Expected vs actual behavior
-- System information (OS, compiler version)
+**Feature Requests:** Describe use case and implementation approach
 
-### Suggesting Features
-Open an issue with:
-- Feature description
-- Use case and motivation
-- Possible implementation approach
+**Pull Requests:** Fork, create feature branch, submit PR with tests
 
-### Submitting Pull Requests
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-- Follow C++17 standards
-- Use meaningful variable names
-- Comment complex logic
-- Add unit tests for new features
+**Code Style:** C++17 standards, meaningful names, documented logic
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```
-MIT License - Copyright (c) 2025 Oblivionsage
-```
+MIT License - see [LICENSE](LICENSE) file
+
+Copyright (c) 2025 Oblivionsage
 
 ---
 
 ## Acknowledgments
 
-- Inspired by tools like `xxd`, `hexdump`, and `objdump`
-- Built with [OpenSSL](https://www.openssl.org/) for cryptographic functions
-- Thanks to the reverse engineering community for inspiration
+Inspired by: PEiD, Detect It Easy, PEStudio, CFF Explorer, IDA Pro
+
+Built with: OpenSSL (cryptography), modern C++ standard library
+
+Community: Thanks to reverse engineering and infosec communities
 
 ---
 
-## Contact & Support
+**GitHub:** [Oblivionsage/BinAnalyzer](https://github.com/Oblivionsage/BinAnalyzer)
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/Oblivionsage/BinAnalyzer/issues)
-- **GitHub Discussions**: [Ask questions or share ideas](https://github.com/Oblivionsage/BinAnalyzer/discussions)
-- **Developer**: [@Oblivionsage](https://github.com/Oblivionsage)
-
----
-
-<div align="center">
-
-**If you find this tool useful, please consider giving it a star**
-
-Made for the reverse engineering community
-
-</div>
+**Developer:** [@Oblivionsage](https://github.com/Oblivionsage)
