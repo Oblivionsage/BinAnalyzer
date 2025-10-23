@@ -1,6 +1,15 @@
 # BinAnalyzer
 
-Binary analysis toolkit for offensive security research.
+![Version](https://img.shields.io/badge/version-1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
+![Build](https://github.com/Oblivionsage/BinAnalyzer/actions/workflows/c-cpp.yml/badge.svg)
+
+Binary analysis toolkit for offensive security research
+
+```
+Cross-platform | Fast | Modular | Open Source
+```
 
 ## Features
 
