@@ -19,6 +19,10 @@ struct Function {
     size_t instruction_count;
     bool has_prologue;
     bool has_epilogue;
+    bool is_leaf;
+    bool is_recursive;
+    int complexity;
+    std::string calling_convention;
 };
 
 class FunctionAnalyzer {
