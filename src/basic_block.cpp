@@ -175,3 +175,5 @@ std::vector<BasicBlock> BasicBlockAnalyzer::analyze(const std::vector<Instructio
 }
 
 } // namespace BinAnalyzer
+
+// TODO: Optimize basic block detection for large binaries
