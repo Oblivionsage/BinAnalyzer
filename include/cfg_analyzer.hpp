@@ -28,3 +28,4 @@ private:
 } // namespace BinAnalyzer
 
 #endif // CFG_ANALYZER_HPP
+
