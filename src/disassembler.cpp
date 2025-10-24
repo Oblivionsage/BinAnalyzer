@@ -173,3 +173,7 @@ Architecture string_to_architecture(const std::string& str) {
 }
 
 } // namespace BinAnalyzer
+
+// TODO: Add MIPS architecture support
+// TODO: Implement instruction caching
+// TODO: Support custom instruction handlers
