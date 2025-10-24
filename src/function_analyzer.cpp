@@ -1,3 +1,4 @@
+// Function Boundary Detection Module
 #include "function_analyzer.hpp"
 #include <algorithm>
 
