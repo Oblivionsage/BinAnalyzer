@@ -7,7 +7,7 @@
 
 Binary analysis toolkit for offensive security research
 ```
-Cross-platform | Fast | Modular | Open Source
+Cross-Platform | Fast | Modular | Open Source
 ```
 
 ## Features
