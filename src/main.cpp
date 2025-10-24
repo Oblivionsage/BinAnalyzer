@@ -380,12 +380,100 @@ int main(int argc, char* argv[]) {
             
             std::cout << "  Instructions: " << func.instruction_count << "\n";
             std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
             std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
             std::cout << "  Called from:  " << func.call_sites.size() << "\n";
             
-            if (func.has_prologue) std::cout << "  [PROLOGUE]\n";
-            if (func.has_epilogue) std::cout << "  [EPILOGUE]\n";
-            std::cout << "\n";
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Complexity:   " << func.complexity << "\n";
+            std::cout << "  Convention:   " << func.calling_convention << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]";
+            if (func.is_leaf) std::cout << "  [LEAF]";
+            if (func.is_recursive) std::cout << "  [RECURSIVE]";
+            std::cout << "\n\n";
         }
         return 0;
     }
