@@ -29,3 +29,10 @@ private:
 
 #endif // CFG_ANALYZER_HPP
 
+
+    // Detect loops in CFG
+    std::vector<std::pair<uint64_t, uint64_t>> detect_loops(
+        const Function& func, const std::vector<BasicBlock>& blocks);
+    
+    // Calculate average complexity
+    double get_average_complexity(const std::vector<Function>& functions);
