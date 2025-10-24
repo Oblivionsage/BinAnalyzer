@@ -1,3 +1,4 @@
+// Copyright (c) 2024-2025 Oblivionsage
 #ifndef DISASSEMBLER_HPP
 #define DISASSEMBLER_HPP
 
