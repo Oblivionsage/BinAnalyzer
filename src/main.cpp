@@ -515,3 +515,6 @@ int main(int argc, char* argv[]) {
     
     return 0;
 }
+
+// TODO: Add multi-threading support
+// TODO: Implement progress bar for large files
