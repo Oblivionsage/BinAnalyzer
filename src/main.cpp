@@ -590,6 +590,31 @@ int main(int argc, char* argv[]) {
     BinAnalyzer::XRefAnalyzer xrefAnalyzer;
     auto xrefs = xrefAnalyzer.analyze(instructions);
     
+    // Calculate enhanced statistics
+    int leaf_count = 0;
+    int recursive_count = 0;
+    int complex_count = 0;
+    int call_xrefs = 0;
+    int jump_xrefs = 0;
+    int data_xrefs = 0;
+    int total_loops = 0;
+    
+    for (const auto& func : functions) {
+        if (func.is_leaf) leaf_count++;
+        if (func.is_recursive) recursive_count++;
+        if (func.complexity > 10) complex_count++;
+        
+        BinAnalyzer::CFGAnalyzer cfgAnalyzer;
+        auto loops = cfgAnalyzer.detect_loops(func, blocks);
+        total_loops += loops.size();
+    }
+    
+    for (const auto& xref : xrefs) {
+        if (xref.type == "call") call_xrefs++;
+        else if (xref.type == "jump") jump_xrefs++;
+        else data_xrefs++;
+    }
+    
     std::cout << "[*] Code Analysis Summary\n";
     std::cout << "-------------------------\n";
     std::cout << "Architecture:  " << BinAnalyzer::architecture_to_string(arch) << "\n";
@@ -597,8 +622,21 @@ int main(int argc, char* argv[]) {
     std::cout << "Instructions:  " << instructions.size() << " \033[90m(use --disasm)\033[0m\n";
     std::cout << "Basic Blocks:  " << blocks.size() << " \033[90m(use --blocks)\033[0m\n";
     std::cout << "Functions:     " << functions.size() << " \033[90m(use --functions)\033[0m\n";
+    std::cout << "  - Leaf:      " << leaf_count << "\n";
+    std::cout << "  - Recursive: " << recursive_count << "\n";
+    std::cout << "  - Complex:   " << complex_count << " (complexity > 10)\n";
     std::cout << "Cross-refs:    " << xrefs.size() << " \033[90m(use --xref <addr>)\033[0m\n";
-    std::cout << "\033[90mControl Flow:  (use --cfg)\033[0m\n";
+    std::cout << "  - Calls:     " << call_xrefs << "\n";
+    std::cout << "  - Jumps:     " << jump_xrefs << "\n";
+    std::cout << "  - Data:      " << data_xrefs << "\n";
+    std::cout << "Control Flow:  \033[90m(use --cfg)\033[0m\n";
+    std::cout << "  - Loops:     " << total_loops << "\n";
+    if (!functions.empty()) {
+        BinAnalyzer::CFGAnalyzer cfgAnalyzer;
+        double avg_complexity = cfgAnalyzer.get_average_complexity(functions);
+        std::cout << "  - Avg Complexity: " << std::fixed << std::setprecision(1)
+                  << avg_complexity << "\n";
+    }
     std::cout << "\n";
     
     return 0;
