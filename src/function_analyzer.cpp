@@ -239,3 +239,27 @@ bool FunctionAnalyzer::is_recursive(const Function& func, const std::vector<Func
     
     return false;
 }
+
+int FunctionAnalyzer::calculate_complexity(const Function& func, const std::vector<BasicBlock>& blocks) {
+    // Cyclomatic Complexity = E - N + 2P
+    // E = edges, N = nodes, P = connected components (usually 1)
+    // Simplified: M = E - N + 2
+    
+    int nodes = 0;
+    int edges = 0;
+    
+    for (const auto& block : blocks) {
+        // Count blocks in this function
+        if (block.start_address >= func.start_address && 
+            block.start_address <= func.end_address) {
+            nodes++;
+            edges += block.successors.size();
+        }
+    }
+    
+    if (nodes == 0) return 1;
+    
+    // M = E - N + 2
+    int complexity = edges - nodes + 2;
+    return (complexity > 0) ? complexity : 1;
+}
