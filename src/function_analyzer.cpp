@@ -210,3 +210,8 @@ std::vector<Function> FunctionAnalyzer::analyze(const std::vector<Instruction>& 
 // TODO: Detect nested functions
 // TODO: Add function signature analysis
 // TODO: Support stack frame reconstruction
+
+bool FunctionAnalyzer::is_leaf_function(const Function& func) {
+    // Leaf function makes no calls to other functions
+    return func.calls_to.empty();
+}
