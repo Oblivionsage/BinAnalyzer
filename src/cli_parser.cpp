@@ -26,9 +26,26 @@ CliOptions CliParser::parse(int argc, char* argv[]) {
         else if (arg == "--red-team" || arg == "-r") {
             options.redTeamMode = true;
         }
+        else if (arg == "--cfg") {
+            options.showCFG = true;
+        }
+        else if (arg == "--functions") {
+            options.showFunctions = true;
+        }
+        else if (arg == "--blocks") {
+            options.showBlocks = true;
+        }
+        else if (arg == "--xref") {
+            if (i + 1 < argc) {
+                options.xrefAddress = std::stoull(argv[++i], nullptr, 0);
+            } else {
+                std::cerr << "Error: --xref requires an address\n";
+                options.showHelp = true;
+                return options;
+            }
+        }
         else if (arg == "--disasm" || arg == "-d") {
             options.disasmMode = true;
-            // Check if next arg is a number (instruction count)
             if (i + 1 < argc && argv[i + 1][0] != '-') {
                 char* endptr;
                 long count = std::strtol(argv[i + 1], &endptr, 10);
@@ -42,7 +59,7 @@ CliOptions CliParser::parse(int argc, char* argv[]) {
             if (i + 1 < argc) {
                 options.architecture = argv[++i];
             } else {
-                std::cerr << "Error: --arch requires a value (x86, x64, arm, arm64, thumb)\n";
+                std::cerr << "Error: --arch requires a value\n";
                 options.showHelp = true;
                 return options;
             }
@@ -103,6 +120,10 @@ void CliParser::printHelp(const char* programName) {
     std::cout << "  \033[96m-m, --min-string <num>\033[0m  Minimum string length (default: 5)\n";
     std::cout << "  \033[96m-d, --disasm [count]\033[0m    Disassemble instructions (default: 50)\n";
     std::cout << "  \033[96m-a, --arch <arch>\033[0m       Architecture: x86, x64, arm, arm64, thumb, auto\n";
+    std::cout << "  \033[96m--cfg\033[0m                   Show control flow graph\n";
+    std::cout << "  \033[96m--functions\033[0m             List detected functions\n";
+    std::cout << "  \033[96m--blocks\033[0m                Show basic blocks\n";
+    std::cout << "  \033[96m--xref <addr>\033[0m           Show cross-references for address\n";
     std::cout << "  \033[96m--no-color\033[0m              Disable colored output\n";
     std::cout << "  \033[96m--strings-only\033[0m          Only extract and display strings\n";
     std::cout << "  \033[96m-r, --red-team\033[0m          Enable Red Team analysis mode\n";
@@ -110,19 +131,19 @@ void CliParser::printHelp(const char* programName) {
     std::cout << "\n\033[1mEXAMPLES:\033[0m\n";
     std::cout << "  " << programName << " /bin/ls\n";
     std::cout << "  " << programName << " --disasm /bin/ls\n";
+    std::cout << "  " << programName << " --functions /bin/ls\n";
+    std::cout << "  " << programName << " --cfg /bin/ls\n";
+    std::cout << "  " << programName << " --blocks /bin/ls\n";
+    std::cout << "  " << programName << " --xref 0x401000 malware.exe\n";
     std::cout << "  " << programName << " --disasm --arch arm64 firmware.bin\n";
-    std::cout << "  " << programName << " --disasm --arch thumb --offset 0x1000 app.elf\n";
-    std::cout << "  " << programName << " --disasm 100 --offset 0x1000 malware.exe\n";
-    std::cout << "  " << programName << " --offset 0x1000 --length 512 malware.exe\n";
-    std::cout << "  " << programName << " --strings-only --min-string 10 binary.dll\n";
-    std::cout << "  " << programName << " --red-team suspicious.exe\n";
-    std::cout << "  " << programName << " --no-color sample.bin > output.txt\n\n";
+    std::cout << "  " << programName << " --red-team suspicious.exe\n\n";
 }
 
 void CliParser::printVersion() {
     std::cout << "\n\033[1;96mBinAnalyzer\033[0m version \033[1;93m1.0\033[0m\n";
     std::cout << "Modern Binary Analysis Tool\n";
     std::cout << "Supported architectures: x86-32, x86-64, ARM, ARM64, ARM Thumb\n";
+    std::cout << "Features: CFG, Basic Blocks, Function Analysis, Cross-references\n";
     std::cout << "Copyright (c) 2025 Oblivionsage\n";
     std::cout << "License: MIT\n";
     std::cout << "GitHub: https://github.com/Oblivionsage/BinAnalyzer\n\n";

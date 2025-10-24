@@ -10,6 +10,10 @@
 #include "security_analyzer.hpp"
 #include "advanced_analyzer.hpp"
 #include "disassembler.hpp"
+#include "basic_block.hpp"
+#include "function_analyzer.hpp"
+#include "cfg_analyzer.hpp"
+#include "xref_analyzer.hpp"
 
 void displayBanner() {
     std::cout << "\n";
@@ -18,7 +22,6 @@ void displayBanner() {
 }
 
 BinAnalyzer::Architecture detectArchitecture(const std::vector<uint8_t>& data, size_t& entryPoint) {
-    // Check PE file
     if (data.size() >= 0x200 && data[0] == 0x4D && data[1] == 0x5A) {
         uint32_t peOffset = *reinterpret_cast<const uint32_t*>(&data[0x3C]);
         if (peOffset + 0x100 < data.size()) {
@@ -27,184 +30,52 @@ BinAnalyzer::Architecture detectArchitecture(const std::vector<uint8_t>& data, s
                 uint32_t entryRVA = *reinterpret_cast<const uint32_t*>(&data[peOffset + 40]);
                 entryPoint = entryRVA;
                 
-                // PE machine types
                 switch (machine) {
-                    case 0x014c: return BinAnalyzer::Architecture::X86_32;  // IMAGE_FILE_MACHINE_I386
-                    case 0x8664: return BinAnalyzer::Architecture::X86_64;  // IMAGE_FILE_MACHINE_AMD64
-                    case 0x01c0: return BinAnalyzer::Architecture::ARM_32;  // IMAGE_FILE_MACHINE_ARM
-                    case 0xaa64: return BinAnalyzer::Architecture::ARM_64;  // IMAGE_FILE_MACHINE_ARM64
-                    case 0x01c2: return BinAnalyzer::Architecture::THUMB;   // IMAGE_FILE_MACHINE_THUMB
+                    case 0x014c: return BinAnalyzer::Architecture::X86_32;
+                    case 0x8664: return BinAnalyzer::Architecture::X86_64;
+                    case 0x01c0: return BinAnalyzer::Architecture::ARM_32;
+                    case 0xaa64: return BinAnalyzer::Architecture::ARM_64;
+                    case 0x01c2: return BinAnalyzer::Architecture::THUMB;
                 }
             }
         }
     }
-    // Check ELF file
     else if (data.size() >= 64 && data[0] == 0x7F && data[1] == 0x45) {
-        uint8_t elfClass = data[4];  // 1=32-bit, 2=64-bit
+        uint8_t elfClass = data[4];
         uint16_t machine = 0;
         
         if (elfClass == 2 && data.size() >= 0x40) {
-            // ELF64
             machine = *reinterpret_cast<const uint16_t*>(&data[0x12]);
             uint64_t entry = *reinterpret_cast<const uint64_t*>(&data[0x18]);
-            if (entry < 0x1000000) {
-                entryPoint = static_cast<size_t>(entry);
-            }
+            if (entry < 0x1000000) entryPoint = static_cast<size_t>(entry);
         } else if (elfClass == 1 && data.size() >= 0x28) {
-            // ELF32
             machine = *reinterpret_cast<const uint16_t*>(&data[0x12]);
             uint32_t entry = *reinterpret_cast<const uint32_t*>(&data[0x18]);
-            if (entry < 0x1000000) {
-                entryPoint = static_cast<size_t>(entry);
-            }
+            if (entry < 0x1000000) entryPoint = static_cast<size_t>(entry);
         }
         
-        // ELF machine types
         switch (machine) {
-            case 0x03:   return BinAnalyzer::Architecture::X86_32;  // EM_386
-            case 0x3E:   return BinAnalyzer::Architecture::X86_64;  // EM_X86_64
-            case 0x28:   return BinAnalyzer::Architecture::ARM_32;  // EM_ARM
-            case 0xB7:   return BinAnalyzer::Architecture::ARM_64;  // EM_AARCH64
+            case 0x03: return BinAnalyzer::Architecture::X86_32;
+            case 0x3E: return BinAnalyzer::Architecture::X86_64;
+            case 0x28: return BinAnalyzer::Architecture::ARM_32;
+            case 0xB7: return BinAnalyzer::Architecture::ARM_64;
         }
     }
-    // Check Mach-O (iOS/macOS)
     else if (data.size() >= 32) {
         uint32_t magic = *reinterpret_cast<const uint32_t*>(&data[0]);
         
         if (magic == 0xfeedface || magic == 0xcefaedfe) {
-            // Mach-O 32-bit
             uint32_t cputype = *reinterpret_cast<const uint32_t*>(&data[4]);
-            if (cputype == 12) return BinAnalyzer::Architecture::ARM_32;  // CPU_TYPE_ARM
+            if (cputype == 12) return BinAnalyzer::Architecture::ARM_32;
             if (cputype == 7)  return BinAnalyzer::Architecture::X86_32;
         } else if (magic == 0xfeedfacf || magic == 0xcffaedfe) {
-            // Mach-O 64-bit
             uint32_t cputype = *reinterpret_cast<const uint32_t*>(&data[4]);
-            if (cputype == 0x0100000c) return BinAnalyzer::Architecture::ARM_64;  // CPU_TYPE_ARM64
+            if (cputype == 0x0100000c) return BinAnalyzer::Architecture::ARM_64;
             if (cputype == 0x01000007) return BinAnalyzer::Architecture::X86_64;
         }
     }
     
-    return BinAnalyzer::Architecture::X86_64;  // Default
-}
-
-void displayDisassembly(const std::vector<uint8_t>& data, size_t offset, size_t count, BinAnalyzer::Architecture arch) {
-    std::cout << "[*] Disassembly\n";
-    std::cout << "---------------\n";
-    
-    if (offset >= data.size()) {
-        std::cout << "Error: Offset exceeds file size\n";
-        return;
-    }
-    
-    size_t maxSize = std::min(data.size() - offset, static_cast<size_t>(4096));
-    const uint8_t* code = data.data() + offset;
-    
-    BinAnalyzer::Disassembler disasm(arch);
-    auto instructions = disasm.disassemble(code, maxSize, offset);
-    
-    if (instructions.empty()) {
-        std::cout << "Failed to disassemble code\n";
-        return;
-    }
-    
-    std::cout << "\nAddress   | Bytes                    | Instruction\n";
-    std::cout << "----------+--------------------------+---------------------\n";
-    
-    size_t displayCount = std::min(instructions.size(), count);
-    
-    for (size_t i = 0; i < displayCount; i++) {
-        const auto& inst = instructions[i];
-        
-        std::cout << "\033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
-                  << inst.address << "\033[0m | ";
-        
-        for (size_t j = 0; j < inst.size && j < 8; j++) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') 
-                      << static_cast<int>(inst.bytes[j]) << " ";
-        }
-        
-        for (size_t j = inst.size; j < 8; j++) {
-            std::cout << "   ";
-        }
-        
-        std::cout << "| ";
-        std::cout << "\033[93m" << inst.mnemonic << "\033[0m";
-        
-        if (!inst.operands.empty()) {
-            std::cout << " \033[92m" << inst.operands << "\033[0m";
-        }
-        
-        std::cout << "\n" << std::dec;
-    }
-    
-    std::cout << "\nDisassembled " << displayCount << " instructions\n\n";
-}
-
-void displayQuickDisassembly(const std::vector<uint8_t>& data, size_t offset, BinAnalyzer::Architecture arch) {
-    if (offset >= data.size()) {
-        return;
-    }
-    
-    std::cout << "[*] Entry Point Disassembly\n";
-    std::cout << "---------------------------\n";
-    
-    size_t maxSize = std::min(data.size() - offset, static_cast<size_t>(2048));
-    const uint8_t* code = data.data() + offset;
-    
-    BinAnalyzer::Disassembler disasm(arch);
-    auto instructions = disasm.disassemble(code, maxSize, offset);
-    
-    if (instructions.empty()) {
-        std::cout << "Unable to disassemble entry point\n\n";
-        return;
-    }
-    
-    size_t displayCount = std::min(instructions.size(), static_cast<size_t>(20));
-    
-    int calls = 0, jumps = 0, simd = 0;
-    
-    for (size_t i = 0; i < displayCount; i++) {
-        const auto& inst = instructions[i];
-        
-        bool isCall = (inst.mnemonic == "call" || inst.mnemonic == "bl" || inst.mnemonic == "blx");
-        bool isJump = (inst.mnemonic[0] == 'j' && inst.mnemonic != "jmp") || 
-                      (inst.mnemonic[0] == 'b' && inst.mnemonic != "bl" && inst.mnemonic != "blx");
-        bool isJmp = (inst.mnemonic == "jmp" || inst.mnemonic == "b");
-        bool isSIMD = (inst.operands.find("xmm") != std::string::npos || 
-                       inst.operands.find("ymm") != std::string::npos ||
-                       inst.mnemonic[0] == 'v');  // ARM NEON (vmov, vadd, etc)
-        bool isSyscall = (inst.mnemonic == "syscall" || inst.mnemonic == "int" || inst.mnemonic == "svc");
-        
-        if (isCall) calls++;
-        if (isJump || isJmp) jumps++;
-        if (isSIMD) simd++;
-        
-        std::cout << "\033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
-                  << inst.address << "\033[0m  ";
-        
-        if (isCall) {
-            std::cout << "\033[1;91m" << inst.mnemonic << "\033[0m";
-        } else if (isSyscall) {
-            std::cout << "\033[1;95m" << inst.mnemonic << "\033[0m";
-        } else if (isJump || isJmp) {
-            std::cout << "\033[1;93m" << inst.mnemonic << "\033[0m";
-        } else if (isSIMD) {
-            std::cout << "\033[1;94m" << inst.mnemonic << "\033[0m";
-        } else {
-            std::cout << "\033[90m" << inst.mnemonic << "\033[0m";
-        }
-        
-        if (!inst.operands.empty()) {
-            std::cout << " \033[92m" << inst.operands << "\033[0m";
-        }
-        
-        std::cout << "\n" << std::dec;
-    }
-    
-    std::cout << "\n\033[90m[Summary: " << calls << " calls, " << jumps << " jumps";
-    if (simd > 0) std::cout << ", " << simd << " SIMD ops";
-    std::cout << "]\033[0m\n";
-    std::cout << "\033[90mUse --disasm for detailed analysis\033[0m\n\n";
+    return BinAnalyzer::Architecture::X86_64;
 }
 
 void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filepath) {
@@ -224,7 +95,7 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
     bool isPE = false;
     if (data.size() >= 2) {
         if (data[0] == 0x4D && data[1] == 0x5A) {
-            std::cout << "Type: \033[93mPE (Windows Executable)\033[0m\n";
+            std::cout << "Type: PE (Windows Executable)\n";
             isPE = true;
         } else if (data[0] == 0x7F && data[1] == 0x45) {
             std::cout << "Type: ELF (Linux Binary)\n";
@@ -232,12 +103,10 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
             uint32_t magic = *reinterpret_cast<const uint32_t*>(&data[0]);
             if (magic == 0xfeedface || magic == 0xcefaedfe || 
                 magic == 0xfeedfacf || magic == 0xcffaedfe) {
-                std::cout << "Type: \033[92mMach-O (macOS/iOS Binary)\033[0m\n";
+                std::cout << "Type: Mach-O (macOS/iOS Binary)\n";
             } else {
                 std::cout << "Type: Unknown\n";
             }
-        } else {
-            std::cout << "Type: Unknown\n";
         }
     }
     
@@ -299,10 +168,10 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
             uint16_t sections = *reinterpret_cast<const uint16_t*>(&data[peOffset + 6]);
             uint32_t timestamp = *reinterpret_cast<const uint32_t*>(&data[peOffset + 8]);
             
-            std::cout << "Entry point: \033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
-                      << entryPoint << "\033[0m" << std::dec << "\n";
-            std::cout << "Image base:  \033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
-                      << imageBase << "\033[0m" << std::dec << "\n";
+            std::cout << "Entry point: 0x" << std::hex << std::setw(8) << std::setfill('0') 
+                      << entryPoint << std::dec << "\n";
+            std::cout << "Image base:  0x" << std::hex << std::setw(8) << std::setfill('0') 
+                      << imageBase << std::dec << "\n";
             std::cout << "Sections:    " << sections << "\n";
             std::cout << "Timestamp:   " << timestamp << "\n";
         }
@@ -335,8 +204,45 @@ void displayBasicInfo(const std::vector<uint8_t>& data, const std::string& filep
         }
         std::cout << std::dec << "\n";
     }
-    
     std::cout << "\n";
+}
+
+void displayQuickDisasm(const std::vector<BinAnalyzer::Instruction>& instructions, size_t count) {
+    std::cout << "[*] Entry Point Disassembly\n";
+    std::cout << "---------------------------\n";
+    
+    size_t displayCount = std::min(instructions.size(), count);
+    int calls = 0, jumps = 0;
+    
+    for (size_t i = 0; i < displayCount; i++) {
+        const auto& inst = instructions[i];
+        
+        bool isCall = (inst.mnemonic == "call" || inst.mnemonic == "bl" || inst.mnemonic == "blx");
+        bool isJump = (inst.mnemonic[0] == 'j' || inst.mnemonic[0] == 'b');
+        
+        if (isCall) calls++;
+        if (isJump) jumps++;
+        
+        std::cout << "\033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
+                  << inst.address << "\033[0m  ";
+        
+        if (isCall) {
+            std::cout << "\033[91m" << inst.mnemonic << "\033[0m";
+        } else if (isJump) {
+            std::cout << "\033[93m" << inst.mnemonic << "\033[0m";
+        } else {
+            std::cout << "\033[90m" << inst.mnemonic << "\033[0m";
+        }
+        
+        if (!inst.operands.empty()) {
+            std::cout << " \033[92m" << inst.operands << "\033[0m";
+        }
+        
+        std::cout << "\n" << std::dec;
+    }
+    
+    std::cout << "\n\033[90m[Summary: " << calls << " calls, " << jumps << " jumps]\033[0m\n";
+    std::cout << "\033[90mUse --disasm for detailed analysis\033[0m\n\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -355,7 +261,6 @@ int main(int argc, char* argv[]) {
     
     if (options.filename.empty()) {
         std::cerr << "Error: No input file specified\n";
-        std::cerr << "Use --help for usage information\n";
         return 1;
     }
     
@@ -366,51 +271,12 @@ int main(int argc, char* argv[]) {
     }
     
     std::vector<uint8_t> data = fileHandler.readAll();
-    
     if (data.empty()) {
-        std::cerr << "Error: Failed to read file or file is empty\n";
+        std::cerr << "Error: File is empty\n";
         return 1;
     }
     
     displayBanner();
-    
-    // Disassembly mode
-    if (options.disasmMode) {
-        size_t entryPoint = 0;
-        BinAnalyzer::Architecture arch;
-        
-        // User specified architecture or auto-detect
-        if (options.architecture != "auto") {
-            arch = BinAnalyzer::string_to_architecture(options.architecture);
-            entryPoint = (options.offset != 0) ? options.offset : 0;
-            
-            if (arch == BinAnalyzer::Architecture::AUTO) {
-                std::cerr << "Error: Invalid architecture '" << options.architecture << "'\n";
-                std::cerr << "Valid options: x86, x64, arm, arm64, thumb, auto\n";
-                return 1;
-            }
-        } else {
-            arch = detectArchitecture(data, entryPoint);
-            if (options.offset != 0) {
-                entryPoint = options.offset;
-            }
-        }
-        
-        std::cout << "[*] File: " << options.filename << "\n";
-        std::cout << "Architecture: " << BinAnalyzer::architecture_to_string(arch) << "\n";
-        std::cout << "Entry Point: 0x" << std::hex << entryPoint << std::dec;
-        if (options.offset != 0) {
-            std::cout << " (user-specified)";
-        } else if (options.architecture != "auto") {
-            std::cout << " (user-specified arch)";
-        } else {
-            std::cout << " (auto-detected)";
-        }
-        std::cout << "\n\n";
-        
-        displayDisassembly(data, entryPoint, options.disasmCount, arch);
-        return 0;
-    }
     
     // Strings-only mode
     if (options.stringsOnly) {
@@ -424,7 +290,7 @@ int main(int argc, char* argv[]) {
             if (data[i] >= 0x20 && data[i] <= 0x7E) {
                 currentString += static_cast<char>(data[i]);
             } else {
-                if (currentString.length() >= static_cast<size_t>(options.minStringLength)) {
+                if (currentString.length() >= options.minStringLength) {
                     std::cout << currentString << "\n";
                     count++;
                 }
@@ -436,50 +302,166 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     
-    // Red Team Analysis Mode
-    if (options.redTeamMode) {
+    // Detect architecture
+    size_t entryPoint = 0;
+    BinAnalyzer::Architecture arch;
+    
+    if (options.architecture != "auto") {
+        arch = BinAnalyzer::string_to_architecture(options.architecture);
+        entryPoint = (options.offset != 0) ? options.offset : 0;
+    } else {
+        arch = detectArchitecture(data, entryPoint);
+        if (options.offset != 0) entryPoint = options.offset;
+    }
+    
+    // Disassemble (limit to 32K instructions for performance)
+    size_t maxSize = std::min(data.size() - entryPoint, static_cast<size_t>(32768));
+    const uint8_t* code = data.data() + entryPoint;
+    
+    BinAnalyzer::Disassembler disasm(arch);
+    auto instructions = disasm.disassemble(code, maxSize, entryPoint);
+    
+    // Limit instructions for analysis in default mode
+    if (!options.disasmMode && !options.showBlocks && !options.showFunctions && 
+        !options.showCFG && options.xrefAddress == 0) {
+        if (instructions.size() > 8192) {
+            instructions.resize(8192);
+        }
+    }
+    
+    // Basic Block Analysis mode
+    if (options.showBlocks) {
         displayBasicInfo(data, options.filename);
         
-        ImportAnalyzer importAnalyzer;
-        ImportAnalysisResult importResult = importAnalyzer.analyze(data);
-        importAnalyzer.displayResults(importResult);
+        BinAnalyzer::BasicBlockAnalyzer bbAnalyzer;
+        auto blocks = bbAnalyzer.analyze(instructions);
         
-        SecurityAnalyzer secAnalyzer;
-        SecurityAnalysisResult secResult = secAnalyzer.analyze(data);
-        secAnalyzer.displayResults(secResult);
+        std::cout << "[*] Basic Blocks\n";
+        std::cout << "----------------\n";
+        std::cout << "Total blocks: " << blocks.size() << "\n\n";
         
-        AdvancedAnalyzer advancedAnalyzer;
-        advancedAnalyzer.runFullAnalysis(data);
+        for (size_t i = 0; i < std::min(blocks.size(), static_cast<size_t>(20)); i++) {
+            const auto& block = blocks[i];
+            std::cout << "Block #" << (i + 1) << " @ 0x" << std::hex 
+                      << block.start_address << std::dec << "\n";
+            std::cout << "  Instructions: " << block.size() << "\n";
+            std::cout << "  Successors:   " << block.successors.size() << "\n";
+            std::cout << "  Predecessors: " << block.predecessors.size() << "\n";
+            if (block.ends_with_return) std::cout << "  [RETURNS]\n";
+            std::cout << "\n";
+        }
         
+        if (blocks.size() > 20) {
+            std::cout << "... and " << (blocks.size() - 20) << " more blocks\n\n";
+        }
         return 0;
     }
     
-    // Standard mode with quick disassembly
-    displayBasicInfo(data, options.filename);
-    
-    size_t entryPoint = 0;
-    BinAnalyzer::Architecture arch = detectArchitecture(data, entryPoint);
-    
-    if (entryPoint > 0 && entryPoint < data.size()) {
-        displayQuickDisassembly(data, entryPoint, arch);
-    }
-    
-    // PE parsing
-    if (data.size() >= 2 && data[0] == 0x4D && data[1] == 0x5A) {
-        PEParser peParser;
-        PEInfo peInfo = peParser.parse(data);
+    // Function Analysis mode
+    if (options.showFunctions) {
+        displayBasicInfo(data, options.filename);
         
-        if (peInfo.isPE) {
-            std::cout << "[*] PE Header\n";
-            std::cout << "-------------\n";
-            std::cout << "Architecture: " << peInfo.architecture << "\n";
-            std::cout << "Subsystem: " << peInfo.subsystem << "\n";
-            std::cout << "Entry point: 0x" << std::hex << peInfo.entryPoint << std::dec << "\n";
-            std::cout << "Image base: 0x" << std::hex << peInfo.imageBase << std::dec << "\n";
-            std::cout << "Sections: " << peInfo.numberOfSections << "\n";
-            std::cout << "Timestamp: " << peInfo.timestamp << "\n";
+        BinAnalyzer::BasicBlockAnalyzer bbAnalyzer;
+        auto blocks = bbAnalyzer.analyze(instructions);
+        
+        BinAnalyzer::FunctionAnalyzer funcAnalyzer;
+        auto functions = funcAnalyzer.analyze(instructions, blocks);
+        
+        std::cout << "[*] Functions\n";
+        std::cout << "-------------\n";
+        std::cout << "Total functions: " << functions.size() << "\n\n";
+        
+        for (const auto& func : functions) {
+            std::cout << func.name << " @ 0x" << std::hex << func.start_address;
+            if (func.end_address != func.start_address) {
+                std::cout << " - 0x" << func.end_address;
+            }
+            std::cout << std::dec << "\n";
+            
+            std::cout << "  Instructions: " << func.instruction_count << "\n";
+            std::cout << "  Basic blocks: " << func.basic_blocks.size() << "\n";
+            std::cout << "  Calls to:     " << func.calls_to.size() << "\n";
+            std::cout << "  Called from:  " << func.call_sites.size() << "\n";
+            
+            if (func.has_prologue) std::cout << "  [PROLOGUE]\n";
+            if (func.has_epilogue) std::cout << "  [EPILOGUE]\n";
             std::cout << "\n";
         }
+        return 0;
+    }
+    
+    // CFG mode
+    if (options.showCFG) {
+        displayBasicInfo(data, options.filename);
+        
+        BinAnalyzer::BasicBlockAnalyzer bbAnalyzer;
+        auto blocks = bbAnalyzer.analyze(instructions);
+        
+        BinAnalyzer::FunctionAnalyzer funcAnalyzer;
+        auto functions = funcAnalyzer.analyze(instructions, blocks);
+        
+        if (!functions.empty()) {
+            BinAnalyzer::CFGAnalyzer cfgAnalyzer;
+            size_t funcCount = std::min(functions.size(), static_cast<size_t>(3));
+            
+            for (size_t i = 0; i < funcCount; i++) {
+                cfgAnalyzer.generate_cfg(functions[i], blocks);
+                cfgAnalyzer.display_cfg(functions[i], blocks);
+                cfgAnalyzer.print_statistics(functions[i], blocks);
+            }
+            
+            if (functions.size() > 3) {
+                std::cout << "... " << (functions.size() - 3) << " more functions\n\n";
+            }
+        }
+        return 0;
+    }
+    
+    // XRef mode
+    if (options.xrefAddress != 0) {
+        displayBasicInfo(data, options.filename);
+        
+        BinAnalyzer::XRefAnalyzer xrefAnalyzer;
+        xrefAnalyzer.analyze(instructions);
+        xrefAnalyzer.display_xrefs(options.xrefAddress);
+        return 0;
+    }
+    
+    // Disasm mode
+    if (options.disasmMode) {
+        displayBasicInfo(data, options.filename);
+        
+        std::cout << "[*] Disassembly\n";
+        std::cout << "---------------\n";
+        std::cout << "Architecture: " << BinAnalyzer::architecture_to_string(arch) << "\n";
+        std::cout << "Entry Point: 0x" << std::hex << entryPoint << std::dec << "\n\n";
+        
+        size_t displayCount = std::min(instructions.size(), options.disasmCount);
+        
+        for (size_t i = 0; i < displayCount; i++) {
+            const auto& inst = instructions[i];
+            
+            std::cout << "\033[96m0x" << std::hex << std::setw(8) << std::setfill('0') 
+                      << inst.address << "\033[0m  ";
+            std::cout << "\033[93m" << inst.mnemonic << "\033[0m";
+            
+            if (!inst.operands.empty()) {
+                std::cout << " \033[92m" << inst.operands << "\033[0m";
+            }
+            
+            std::cout << "\n" << std::dec;
+        }
+        
+        std::cout << "\nDisassembled " << displayCount << " instructions\n\n";
+        return 0;
+    }
+    
+    // DEFAULT MODE: Show everything
+    displayBasicInfo(data, options.filename);
+    
+    // Quick disassembly preview
+    if (!instructions.empty()) {
+        displayQuickDisasm(instructions, 20);
     }
     
     // String extraction
@@ -493,7 +475,7 @@ int main(int argc, char* argv[]) {
         if (data[i] >= 0x20 && data[i] <= 0x7E) {
             currentString += static_cast<char>(data[i]);
         } else {
-            if (currentString.length() >= static_cast<size_t>(options.minStringLength)) {
+            if (currentString.length() >= options.minStringLength) {
                 strings.push_back(currentString);
             }
             currentString.clear();
@@ -508,7 +490,28 @@ int main(int argc, char* argv[]) {
     if (strings.size() > displayCount) {
         std::cout << "... and " << (strings.size() - displayCount) << " more\n";
     }
-    std::cout << "\nTotal strings: " << strings.size() << "\n";
+    std::cout << "\nTotal strings: " << strings.size() << "\n\n";
+    
+    // Analysis summary
+    BinAnalyzer::BasicBlockAnalyzer bbAnalyzer;
+    auto blocks = bbAnalyzer.analyze(instructions);
+    
+    BinAnalyzer::FunctionAnalyzer funcAnalyzer;
+    auto functions = funcAnalyzer.analyze(instructions, blocks);
+    
+    BinAnalyzer::XRefAnalyzer xrefAnalyzer;
+    auto xrefs = xrefAnalyzer.analyze(instructions);
+    
+    std::cout << "[*] Code Analysis Summary\n";
+    std::cout << "-------------------------\n";
+    std::cout << "Architecture:  " << BinAnalyzer::architecture_to_string(arch) << "\n";
+    std::cout << "Entry Point:   0x" << std::hex << entryPoint << std::dec << "\n";
+    std::cout << "Instructions:  " << instructions.size() << " \033[90m(use --disasm)\033[0m\n";
+    std::cout << "Basic Blocks:  " << blocks.size() << " \033[90m(use --blocks)\033[0m\n";
+    std::cout << "Functions:     " << functions.size() << " \033[90m(use --functions)\033[0m\n";
+    std::cout << "Cross-refs:    " << xrefs.size() << " \033[90m(use --xref <addr>)\033[0m\n";
+    std::cout << "\033[90mControl Flow:  (use --cfg)\033[0m\n";
+    std::cout << "\n";
     
     return 0;
 }

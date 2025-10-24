@@ -45,6 +45,10 @@ add_executable(binanalyzer
     src/string_analyzer.cpp
     src/advanced_analyzer.cpp
     src/disassembler.cpp
+    src/basic_block.cpp
+    src/function_analyzer.cpp
+    src/cfg_analyzer.cpp
+    src/xref_analyzer.cpp
 )
 
 # Link libraries
