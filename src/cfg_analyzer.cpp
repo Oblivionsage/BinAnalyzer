@@ -1,3 +1,4 @@
+// BinAnalyzer - CFG Analysis Module
 #include "cfg_analyzer.hpp"
 #include <iostream>
 #include <iomanip>
