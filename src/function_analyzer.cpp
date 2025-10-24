@@ -316,3 +316,5 @@ std::string FunctionAnalyzer::detect_calling_convention(const std::vector<Instru
             }
         }
     }
+
+// Note: Complexity calculation follows McCabe's cyclomatic complexity metric
