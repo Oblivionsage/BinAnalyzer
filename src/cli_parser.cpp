@@ -148,3 +148,7 @@ void CliParser::printVersion() {
     std::cout << "License: MIT\n";
     std::cout << "GitHub: https://github.com/Oblivionsage/BinAnalyzer\n\n";
 }
+
+// TODO: Add batch processing support
+// TODO: Implement config file support
+// TODO: Add interactive mode
