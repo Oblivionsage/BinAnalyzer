@@ -302,3 +302,17 @@ std::string FunctionAnalyzer::detect_calling_convention(const std::vector<Instru
     // Default
     return "cdecl";
 }
+    
+    // Phase 5: Calculate function metrics
+    for (auto& func : functions) {
+        func.is_leaf = is_leaf_function(func);
+        func.is_recursive = is_recursive(func, functions);
+        func.complexity = calculate_complexity(func, blocks);
+        
+        for (size_t i = 0; i < instructions.size(); i++) {
+            if (instructions[i].address == func.start_address) {
+                func.calling_convention = detect_calling_convention(instructions, i);
+                break;
+            }
+        }
+    }
