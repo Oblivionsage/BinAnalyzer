@@ -104,3 +104,7 @@ void CFGAnalyzer::print_statistics(const Function& func, const std::vector<Basic
 
 } // namespace BinAnalyzer
 
+
+// TODO: Export CFG to DOT format
+// TODO: Add cyclomatic complexity calculation
+// TODO: Detect infinite loops
