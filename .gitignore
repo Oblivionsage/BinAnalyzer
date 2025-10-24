@@ -30,3 +30,9 @@ Makefile
 Thumbs.db
 help.txt
 *.txt
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*~
