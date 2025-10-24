@@ -79,3 +79,6 @@ std::vector<uint8_t> FileHandler::readBytes(size_t offset, size_t count) {
 std::vector<uint8_t> FileHandler::readAll() {
     return readBytes(0, fileSize_);
 }
+
+// TODO: Add better error messages
+// TODO: Implement retry logic for large files
