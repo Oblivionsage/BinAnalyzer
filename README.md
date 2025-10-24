@@ -72,7 +72,6 @@ make
 ./binanalyzer --disasm putty.exe
 
 # Test ARM
-wget https://github.com/therealsaumil/static-arm-bins/raw/master/id-armel-static -O test-arm
 ./binanalyzer --disasm test-arm
 
 # Test Thumb mode
