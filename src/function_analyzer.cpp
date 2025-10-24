@@ -217,3 +217,25 @@ bool FunctionAnalyzer::is_leaf_function(const Function& func) {
 }
 
 // Note: Recursive detection checks both direct and indirect recursion
+
+bool FunctionAnalyzer::is_recursive(const Function& func, const std::vector<Function>& all_functions) {
+    // Direct recursion: function calls itself
+    if (func.calls_to.count(func.start_address)) {
+        return true;
+    }
+    
+    // Indirect recursion: check if any called function eventually calls back
+    // For simplicity, only check one level deep
+    for (uint64_t called_addr : func.calls_to) {
+        for (const auto& other_func : all_functions) {
+            if (other_func.start_address == called_addr) {
+                if (other_func.calls_to.count(func.start_address)) {
+                    return true;
+                }
+                break;
+            }
+        }
+    }
+    
+    return false;
+}
