@@ -43,3 +43,15 @@ public:
 } // namespace BinAnalyzer
 
 #endif // FUNCTION_ANALYZER_HPP
+
+    // Calculate cyclomatic complexity
+    int calculate_complexity(const Function& func, const std::vector<BasicBlock>& blocks);
+    
+    // Detect calling convention
+    std::string detect_calling_convention(const std::vector<Instruction>& instructions, size_t func_start);
+    
+    // Check if function is leaf (makes no calls)
+    bool is_leaf_function(const Function& func);
+    
+    // Check if function is recursive
+    bool is_recursive(const Function& func, const std::vector<Function>& all_functions);
