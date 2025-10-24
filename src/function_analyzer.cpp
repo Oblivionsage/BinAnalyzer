@@ -266,3 +266,35 @@ int FunctionAnalyzer::calculate_complexity(const Function& func, const std::vect
 
 // TODO: Add support for switch statements in complexity calculation
 // TODO: Implement McCabe's extension for nested complexity
+
+std::string FunctionAnalyzer::detect_calling_convention(const std::vector<Instruction>& instructions, size_t func_start) {
+    // Check first few instructions for calling convention patterns
+    std::vector<std::string> registers_used;
+    bool stack_cleanup = false;
+    
+    for (size_t i = func_start; i < std::min(func_start + 10, instructions.size()); i++) {
+        const auto& inst = instructions[i];
+        
+        // x64: fastcall uses rcx, rdx, r8, r9
+        if (inst.operands.find("rcx") != std::string::npos ||
+            inst.operands.find("rdx") != std::string::npos ||
+            inst.operands.find("r8") != std::string::npos ||
+            inst.operands.find("r9") != std::string::npos) {
+            return "fastcall (x64)";
+        }
+        
+        // x86: fastcall uses ecx, edx
+        if (inst.operands.find("ecx") != std::string::npos ||
+            inst.operands.find("edx") != std::string::npos) {
+            return "fastcall (x86)";
+        }
+        
+        // Check for stack cleanup (stdcall)
+        if (inst.mnemonic == "ret" && !inst.operands.empty()) {
+            return "stdcall";
+        }
+    }
+    
+    // Default
+    return "cdecl";
+}
