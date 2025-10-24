@@ -87,6 +87,40 @@ void CFGAnalyzer::print_statistics(const Function& func, const std::vector<Basic
         }
     }
     
+    auto loops = detect_loops(func, blocks);
+    
+    std::cout << "[*] CFG Statistics
+";
+    std::cout << "------------------
+";
+    std::cout << "Basic blocks:  " << block_count << "
+";
+    std::cout << "Edges:         " << edge_count << "
+";
+    std::cout << "Entry blocks:  " << entry_blocks << "
+";
+    std::cout << "Exit blocks:   " << exit_blocks << "
+";
+    std::cout << "Loops:         " << loops.size() << "
+";
+    std::cout << "Complexity:    " << func.complexity << "
+";
+    
+    if (block_count > 0) {
+        std::cout << "Avg edges/block: " << std::fixed << std::setprecision(2) 
+                  << (double)edge_count / block_count << "
+";
+    }
+    
+    std::cout << "
+";
+}
+            if (block.ends_with_return || block.successors.empty()) {
+                exit_blocks++;
+            }
+        }
+    }
+    
     std::cout << "[*] CFG Statistics\n";
     std::cout << "------------------\n";
     std::cout << "Basic blocks:  " << block_count << "\n";
