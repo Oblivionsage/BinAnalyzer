@@ -25,6 +25,8 @@ public:
         is_function_entry(false),
         ends_with_return(false),
         ends_with_call(false) {}
+        , block_type(NORMAL)
+        , loop_depth(0)
     
     size_t size() const { return instructions.size(); }
     bool contains(uint64_t addr) const {
@@ -53,3 +55,13 @@ public:
 } // namespace BinAnalyzer
 
 #endif // BASIC_BLOCK_HPP
+
+    enum BlockType {
+        NORMAL,
+        ENTRY,
+        EXIT,
+        LOOP_HEADER
+    };
+    
+    BlockType block_type;
+    int loop_depth;
