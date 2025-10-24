@@ -134,3 +134,7 @@ void XRefAnalyzer::display_xrefs(uint64_t address) {
 }
 
 } // namespace BinAnalyzer
+
+// TODO: Add recursive xref traversal
+// TODO: Implement xref caching for performance
+// TODO: Support indirect call targets
