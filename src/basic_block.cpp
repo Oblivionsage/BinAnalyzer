@@ -177,3 +177,6 @@ std::vector<BasicBlock> BasicBlockAnalyzer::analyze(const std::vector<Instructio
 } // namespace BinAnalyzer
 
 // TODO: Optimize basic block detection for large binaries
+
+// TODO: Support try-catch blocks
+// TODO: Add block reachability analysis
