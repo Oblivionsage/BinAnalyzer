@@ -263,3 +263,6 @@ int FunctionAnalyzer::calculate_complexity(const Function& func, const std::vect
     int complexity = edges - nodes + 2;
     return (complexity > 0) ? complexity : 1;
 }
+
+// TODO: Add support for switch statements in complexity calculation
+// TODO: Implement McCabe's extension for nested complexity
