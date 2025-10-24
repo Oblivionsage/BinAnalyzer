@@ -137,6 +137,10 @@ std::vector<Function> FunctionAnalyzer::analyze(const std::vector<Instruction>& 
         func.instruction_count = 0;
         func.has_prologue = false;
         func.has_epilogue = false;
+        func.is_leaf = false;
+        func.is_recursive = false;
+        func.complexity = 1;
+        func.calling_convention = "unknown";
         func.name = "sub_" + std::to_string(addr);
         
         // Check if it has prologue
