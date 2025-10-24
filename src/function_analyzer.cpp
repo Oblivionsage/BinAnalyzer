@@ -215,3 +215,5 @@ bool FunctionAnalyzer::is_leaf_function(const Function& func) {
     // Leaf function makes no calls to other functions
     return func.calls_to.empty();
 }
+
+// Note: Recursive detection checks both direct and indirect recursion
