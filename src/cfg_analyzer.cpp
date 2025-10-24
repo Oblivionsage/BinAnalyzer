@@ -177,3 +177,4 @@ double CFGAnalyzer::get_average_complexity(const std::vector<Function>& function
     
     return static_cast<double>(total) / functions.size();
 }
+
