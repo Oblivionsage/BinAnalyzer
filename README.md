@@ -13,6 +13,8 @@ Cross-platform | Fast | Modular | Open Source
 ## Features
 
 - **Multi-Architecture Disassembly** - x86/x64, ARM/ARM64, ARM Thumb with Capstone
+- **Control Flow Analysis** - CFG generation, basic block identification, function detection
+- **Cross-Reference Analysis** - Call graphs, jump targets, data references
 - **Auto-Detection** - Automatic architecture and entry point detection (PE/ELF/Mach-O)
 - PE/ELF/Mach-O file analysis with entry point detection
 - Import table analysis with threat categorization
@@ -43,42 +45,34 @@ make
 
 ## Usage
 ```bash
-# Standard analysis with quick disassembly preview
+# Standard analysis with quick preview
 ./binanalyzer <file>
 
-# Detailed disassembly from entry point
+# Detailed disassembly
 ./binanalyzer --disasm <file>
+./binanalyzer --disasm 100 --offset 0x1000 <file>
 
-# Disassemble with specific architecture
+# Architecture-specific analysis
 ./binanalyzer --disasm --arch arm64 firmware.bin
 ./binanalyzer --disasm --arch thumb binary.elf
 
-# Disassemble 100 instructions from specific offset
-./binanalyzer --disasm 100 --offset 0x1000 <file>
+# Control flow analysis
+./binanalyzer --cfg <file>              # Show control flow graphs
+./binanalyzer --blocks <file>           # List basic blocks
+./binanalyzer --functions <file>        # Detect functions
+
+# Cross-reference analysis
+./binanalyzer --xref 0x401000 <file>    # Show xrefs for address
 
 # Red team analysis mode
 ./binanalyzer --red-team <file>
 
-# Extract strings only
+# String extraction
 ./binanalyzer --strings-only <file>
+./binanalyzer --strings-only --min-string 10 <file>
 
-# Hex dump with custom offset/length
+# Hex dump
 ./binanalyzer --offset 0x1000 --length 512 <file>
-
-# Test x86-64 (Linux)
-./binanalyzer --disasm /bin/ls
-
-# Test PE (Windows)
-./binanalyzer --disasm putty.exe
-
-# Test ARM
-./binanalyzer --disasm test-arm
-
-# Test Thumb mode
-./binanalyzer --disasm --arch thumb --offset 0x8880 binary.elf
-
-# Test ARM64
-./binanalyzer --disasm --arch arm64 ios-binary
 ```
 
 ## Output
@@ -99,6 +93,10 @@ src/
 ├── file_handler.cpp          # File I/O operations
 ├── pe_parser.cpp             # PE format parsing
 ├── disassembler.cpp          # Multi-arch disassembly engine
+├── basic_block.cpp           # Basic block identification
+├── function_analyzer.cpp     # Function boundary detection
+├── cfg_analyzer.cpp          # Control flow graph generation
+├── xref_analyzer.cpp         # Cross-reference analysis
 ├── import_analyzer.cpp       # Import table analysis
 ├── security_analyzer.cpp     # Security features detection
 ├── packer_detector.cpp       # Packer identification
@@ -108,19 +106,42 @@ src/
 └── advanced_analyzer.cpp     # Analysis orchestrator
 ```
 
+## Testing
+```bash
+# Test x86-64 (Linux)
+./binanalyzer /bin/ls
+./binanalyzer --disasm /bin/ls
+./binanalyzer --functions /bin/ls
+./binanalyzer --cfg /bin/ls
+
+# Test PE (Windows)
+./binanalyzer putty.exe
+./binanalyzer --blocks putty.exe
+
+# Test ARM
+wget https://github.com/therealsaumil/static-arm-bins/raw/master/id-armel-static -O test-arm
+./binanalyzer --disasm test-arm
+./binanalyzer --functions test-arm
+
+# Test Thumb mode
+./binanalyzer --disasm --arch thumb --offset 0x8880 binary.elf
+
+# Test cross-references
+./binanalyzer --xref 0x401000 malware.exe
+```
 
 ## Roadmap
 
-### Phase 1: Advanced Binary Analysis
+### Phase 1: Advanced Binary Analysis (done)
 - [x] **Disassembly Engine Integration**
   - [x] x86/x64 instruction disassembly
   - [x] Auto-detect entry point (PE/ELF/Mach-O)
   - [x] Architecture detection (32/64-bit)
   - [x] ARM/ARM64/Thumb support
-  - [ ] Control flow graph generation
-  - [ ] Basic block identification
-  - [ ] Function boundary detection
-  - [ ] Cross-reference analysis
+  - [x] Control flow graph generation
+  - [x] Basic block identification
+  - [x] Function boundary detection
+  - [x] Cross-reference analysis
 
 - [ ] **Advanced Packer Detection**
   - Custom packer signatures database
