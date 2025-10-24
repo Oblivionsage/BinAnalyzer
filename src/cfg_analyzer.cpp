@@ -108,3 +108,38 @@ void CFGAnalyzer::print_statistics(const Function& func, const std::vector<Basic
 // TODO: Export CFG to DOT format
 // TODO: Add cyclomatic complexity calculation
 // TODO: Detect infinite loops
+
+std::vector<std::pair<uint64_t, uint64_t>> CFGAnalyzer::detect_loops(
+    const Function& func, const std::vector<BasicBlock>& blocks) {
+    
+    std::vector<std::pair<uint64_t, uint64_t>> loops;
+    
+    // Simple loop detection: find back edges
+    // A back edge is an edge where target comes before source
+    for (const auto& block : blocks) {
+        if (block.start_address < func.start_address || 
+            block.start_address > func.end_address) {
+            continue;
+        }
+        
+        for (uint64_t succ : block.successors) {
+            // Back edge: successor address <= current address
+            if (succ <= block.start_address) {
+                loops.push_back({succ, block.start_address});
+            }
+        }
+    }
+    
+    return loops;
+}
+
+double CFGAnalyzer::get_average_complexity(const std::vector<Function>& functions) {
+    if (functions.empty()) return 0.0;
+    
+    int total = 0;
+    for (const auto& func : functions) {
+        total += func.complexity;
+    }
+    
+    return static_cast<double>(total) / functions.size();
+}
