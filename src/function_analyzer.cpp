@@ -205,3 +205,7 @@ std::vector<Function> FunctionAnalyzer::analyze(const std::vector<Instruction>& 
 }
 
 } // namespace BinAnalyzer
+
+// TODO: Detect nested functions
+// TODO: Add function signature analysis
+// TODO: Support stack frame reconstruction
