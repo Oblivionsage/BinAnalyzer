@@ -61,7 +61,7 @@ make
 ./binanalyzer --blocks <file>           # List basic blocks
 ./binanalyzer --functions <file>        # Detect functions
 
-# Cross-reference analysis
+# Cross-reference analysis with categorization
 ./binanalyzer --xref 0x401000 <file>    # Show xrefs for address
 
 # Red team analysis mode
@@ -94,9 +94,9 @@ src/
 ├── pe_parser.cpp             # PE format parsing
 ├── disassembler.cpp          # Multi-arch disassembly engine
 ├── basic_block.cpp           # Basic block identification
-├── function_analyzer.cpp     # Function boundary detection
-├── cfg_analyzer.cpp          # Control flow graph generation
-├── xref_analyzer.cpp         # Cross-reference analysis
+├── function_analyzer.cpp     # Function boundary detection with complexity metrics
+├── cfg_analyzer.cpp          # Control flow graph generation with loop detection
+├── xref_analyzer.cpp         # Cross-reference analysis with categorization
 ├── import_analyzer.cpp       # Import table analysis
 ├── security_analyzer.cpp     # Security features detection
 ├── packer_detector.cpp       # Packer identification
@@ -138,10 +138,10 @@ wget https://github.com/therealsaumil/static-arm-bins/raw/master/id-armel-static
   - [x] Auto-detect entry point (PE/ELF/Mach-O)
   - [x] Architecture detection (32/64-bit)
   - [x] ARM/ARM64/Thumb support
-  - [x] Control flow graph generation
+  - [x] Control flow graph generation with loop detection
   - [x] Basic block identification
-  - [x] Function boundary detection
-  - [x] Cross-reference analysis
+  - [x] Function boundary detection with complexity metrics
+  - [x] Cross-reference analysis with categorization
 
 - [ ] **Advanced Packer Detection**
   - Custom packer signatures database
