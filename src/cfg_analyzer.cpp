@@ -9,7 +9,6 @@ namespace BinAnalyzer {
 void CFGAnalyzer::generate_cfg(const Function& func, const std::vector<BasicBlock>& blocks) {
     adjacency_list.clear();
     
-    // Build adjacency list from basic blocks in this function
     for (const auto& block : blocks) {
         if (block.start_address >= func.start_address && 
             block.start_address <= func.end_address) {
@@ -26,7 +25,6 @@ void CFGAnalyzer::display_cfg(const Function& func, const std::vector<BasicBlock
     std::cout << "----------------------\n";
     std::cout << "Function: " << func.name << " @ 0x" << std::hex << func.start_address << std::dec << "\n\n";
     
-    // Simple ASCII representation
     for (const auto& block : blocks) {
         if (block.start_address < func.start_address || 
             block.start_address > func.end_address) {
@@ -44,7 +42,7 @@ void CFGAnalyzer::display_cfg(const Function& func, const std::vector<BasicBlock
         }
         
         std::cout << "\n";
-        std::cout << "    Instructions: " << block.size() << "\n";
+        std::cout << "    Instructions: " << block.instructions.size() << "\n";
         
         if (!block.successors.empty()) {
             std::cout << "    Successors: ";
@@ -89,44 +87,14 @@ void CFGAnalyzer::print_statistics(const Function& func, const std::vector<Basic
     
     auto loops = detect_loops(func, blocks);
     
-    std::cout << "[*] CFG Statistics
-";
-    std::cout << "------------------
-";
-    std::cout << "Basic blocks:  " << block_count << "
-";
-    std::cout << "Edges:         " << edge_count << "
-";
-    std::cout << "Entry blocks:  " << entry_blocks << "
-";
-    std::cout << "Exit blocks:   " << exit_blocks << "
-";
-    std::cout << "Loops:         " << loops.size() << "
-";
-    std::cout << "Complexity:    " << func.complexity << "
-";
-    
-    if (block_count > 0) {
-        std::cout << "Avg edges/block: " << std::fixed << std::setprecision(2) 
-                  << (double)edge_count / block_count << "
-";
-    }
-    
-    std::cout << "
-";
-}
-            if (block.ends_with_return || block.successors.empty()) {
-                exit_blocks++;
-            }
-        }
-    }
-    
     std::cout << "[*] CFG Statistics\n";
     std::cout << "------------------\n";
     std::cout << "Basic blocks:  " << block_count << "\n";
     std::cout << "Edges:         " << edge_count << "\n";
     std::cout << "Entry blocks:  " << entry_blocks << "\n";
     std::cout << "Exit blocks:   " << exit_blocks << "\n";
+    std::cout << "Loops:         " << loops.size() << "\n";
+    std::cout << "Complexity:    " << func.complexity << "\n";
     
     if (block_count > 0) {
         std::cout << "Avg edges/block: " << std::fixed << std::setprecision(2) 
@@ -136,30 +104,20 @@ void CFGAnalyzer::print_statistics(const Function& func, const std::vector<Basic
     std::cout << "\n";
 }
 
-} // namespace BinAnalyzer
-
-
-// TODO: Export CFG to DOT format
-// TODO: Add cyclomatic complexity calculation
-// TODO: Detect infinite loops
-
 std::vector<std::pair<uint64_t, uint64_t>> CFGAnalyzer::detect_loops(
     const Function& func, const std::vector<BasicBlock>& blocks) {
     
     std::vector<std::pair<uint64_t, uint64_t>> loops;
     
-    // Simple loop detection: find back edges
-    // A back edge is an edge where target comes before source
     for (const auto& block : blocks) {
-        if (block.start_address < func.start_address || 
+        if (block.start_address < func.start_address ||
             block.start_address > func.end_address) {
             continue;
         }
         
         for (uint64_t succ : block.successors) {
-            // Back edge: successor address <= current address
             if (succ <= block.start_address) {
-                loops.push_back({succ, block.start_address});
+                loops.push_back(std::make_pair(succ, block.start_address));
             }
         }
     }
@@ -178,3 +136,4 @@ double CFGAnalyzer::get_average_complexity(const std::vector<Function>& function
     return static_cast<double>(total) / functions.size();
 }
 
+} // namespace BinAnalyzer

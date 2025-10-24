@@ -344,7 +344,7 @@ int main(int argc, char* argv[]) {
             const auto& block = blocks[i];
             std::cout << "Block #" << (i + 1) << " @ 0x" << std::hex 
                       << block.start_address << std::dec << "\n";
-            std::cout << "  Instructions: " << block.size() << "\n";
+            std::cout << "  Instructions: " << block.instructions.size() << "\n";
             std::cout << "  Successors:   " << block.successors.size() << "\n";
             std::cout << "  Predecessors: " << block.predecessors.size() << "\n";
             if (block.ends_with_return) std::cout << "  [RETURNS]\n";
