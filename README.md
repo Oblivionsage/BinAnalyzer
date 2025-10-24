@@ -412,3 +412,11 @@ For authorized security research and penetration testing only. Users are respons
 ## Author
 
 Oblivionsage
+
+## Changelog
+
+### v1.0 (Current)
+- Initial release
+- Multi-architecture disassembly
+- Control flow analysis
+- Function detection
